@@ -4,7 +4,8 @@
   "description": "Scrapes the eCTF scoreboard for rank changes.",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node bot.ts"
+    "start": "ts-node bot.ts",
+    "registerSlashCommands": "ts-node registerSlashCommands.ts"
   },
   "author": "ky28059",
   "license": "MIT",
@@ -13,6 +14,10 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@discordjs/builders": "^1.7.0",
+    "@discordjs/rest": "^2.2.0",
+    "discord-api-types": "^0.37.67",
+    "discord.js": "^14.14.1",
     "ts-node": "^10.9.2"
   }
 }
