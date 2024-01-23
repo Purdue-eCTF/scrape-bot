@@ -6,7 +6,7 @@ https://discord.com/oauth2/authorize?client_id=1199441161077674105&scope=bot+app
 ### Running locally
 Create a file called `auth.ts` that exports your Discord token and notification channel ID:
 ```ts
-// bot.ts
+// auth.ts
 export const token = 'very-real-discord-token';
 export const notifyChannelId = '...';
 ```
