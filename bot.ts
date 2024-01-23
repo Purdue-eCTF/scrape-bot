@@ -49,12 +49,17 @@ async function fetchAndUpdateScoreboard() {
 
                 if (scoreboard[name].points !== Number(points))
                     diffs.push(`[points: ${scoreboard[name].points} → ${Number(points)}]`)
-                if (scoreboard[name].rank !== Number(rank))
-                    diffs.push(`[rank: ${scoreboard[name].rank} → ${Number(rank)}]`)
                 if (scoreboard[name].achievements !== Number(achievements))
                     diffs.push(`[achievements: ${scoreboard[name].achievements} → ${Number(achievements)}]`)
 
-                if (diffs.length) totalDiffs.push(`[${name}](${absoluteHref}): ${diffs.join(' ')}`)
+                if (diffs.length) {
+                    // Push rank only if other diffs already exist so that one team jumping 15 ranks doesn't cause
+                    // 14 other lines of diffs.
+                    if (scoreboard[name].rank !== Number(rank))
+                        diffs.push(`[rank: ${scoreboard[name].rank} → ${Number(rank)}]`);
+
+                    totalDiffs.push(`[${name}](${absoluteHref}): ${diffs.join(' ')}`);
+                }
             }
 
             scoreboard[name] = {
