@@ -61,11 +61,14 @@ client.on('interactionCreate', async (interaction) => {
 
     switch (interaction.commandName) {
         case 'scoreboard':
+            const desc = top5
+                .map((name) => scoreboard[name])
+                .map((data) => `${data.rank}. [${data.name}](${data.href}) — ${data.points} points (${data.achievements} achievements)`)
+                .join('\n')
+
             const scoreboardEmbed = new EmbedBuilder()
                 .setTitle('eCTF Scoreboard')
-                .addFields(top5
-                    .map((name) => scoreboard[name])
-                    .map((data) => ({name: `Rank ${data.rank}`, value: `[${data.name}](${data.href}): ${data.points} points (${data.achievements} achievements)`})))
+                .setDescription(desc)
                 .setColor('#C61130')
                 .setTimestamp();
             return void interaction.reply({embeds: [scoreboardEmbed]});
@@ -74,8 +77,7 @@ client.on('interactionCreate', async (interaction) => {
             await fetchAndUpdateScoreboard();
             const refreshEmbed = new EmbedBuilder()
                 .setDescription('Refreshed eCTF scoreboard data.')
-                .setColor('#C61130')
-                .setTimestamp();
+                .setColor('#C61130');
             return void interaction.reply({embeds: [refreshEmbed]});
     }
 });
