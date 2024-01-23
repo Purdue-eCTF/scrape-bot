@@ -9,7 +9,6 @@ const client = new Client({
         "GuildPresences",
         "GuildMembers",
         "GuildMessageReactions",
-        "MessageContent"
     ],
     presence: {activities: [{type: ActivityType.Watching, name: 'the eCTF scoreboard'}]},
     allowedMentions: {repliedUser: false}
@@ -23,13 +22,16 @@ type TeamData = {
     points: number,
 }
 const scoreboard: {[name: string]: TeamData} = {};
-const top5: string[] = [];
+let top5: string[] = [];
 
 
 async function fetchAndUpdateScoreboard() {
     const raw = await (await fetch('https://sb.ectf.mitre.org/game/summary')).text();
 
     const tables = raw.matchAll(/<tbody class='.*?' id='.*?'>([^]+?)<\/tbody>/g);
+    let isTop = true; // TODO: hacky?
+
+    top5 = [];
     for (const [, raw] of tables) {
         const teams = raw.matchAll(/<tr>\s*<td>(\d+)<\/td>\s*<td class='break-word'>\s*<a href="(.+?)">(\w+)<\/a>\s*<\/td>\s*<td>(\d+)<\/td>\s*<td>(\d+)<\/td>\s*<td>[^]+?<\/td>\s*<\/tr>/g);
 
@@ -43,7 +45,10 @@ async function fetchAndUpdateScoreboard() {
                 achievements: Number(achievements),
                 points: Number(points)
             }
+            if (isTop) top5.push(name);
         }
+
+        isTop = false;
     }
 }
 
