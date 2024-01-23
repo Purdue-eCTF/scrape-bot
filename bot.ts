@@ -22,6 +22,7 @@ type TeamData = {
     points: number,
 }
 const scoreboard: {[name: string]: TeamData} = {};
+let lastUpdated: Date;
 let top5: string[] = [];
 
 
@@ -31,6 +32,7 @@ async function fetchAndUpdateScoreboard() {
     const tables = raw.matchAll(/<tbody class='.*?' id='.*?'>([^]+?)<\/tbody>/g);
     let isTop = true; // TODO: hacky?
 
+    lastUpdated = new Date();
     top5 = [];
     for (const [, raw] of tables) {
         const teams = raw.matchAll(/<tr>\s*<td>(\d+)<\/td>\s*<td class='break-word'>\s*<a href="(.+?)">(\w+)<\/a>\s*<\/td>\s*<td>(\d+)<\/td>\s*<td>(\d+)<\/td>\s*<td>[^]+?<\/td>\s*<\/tr>/g);
@@ -70,6 +72,7 @@ client.on('interactionCreate', async (interaction) => {
                 .setTitle('eCTF Scoreboard')
                 .setDescription(desc)
                 .setColor('#C61130')
+                .setFooter({text: `Last scraped ${lastUpdated.toLocaleString()}`})
                 .setTimestamp();
             return void interaction.reply({embeds: [scoreboardEmbed]});
 
@@ -83,4 +86,6 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 void fetchAndUpdateScoreboard();
+setInterval(fetchAndUpdateScoreboard, 1000 * 60);
+
 void client.login(token);
