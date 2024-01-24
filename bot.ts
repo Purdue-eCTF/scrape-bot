@@ -82,7 +82,7 @@ async function fetchAndUpdateScoreboard() {
     if (!channel?.isTextBased()) return;
 
     const diffEmbed = new EmbedBuilder()
-        .setTitle('Detected eCTF Scoreboard Diffs')
+        .setTitle('Detected eCTF scoreboard diffs')
         .setDescription(totalDiffs.join('\n'))
         .setColor('#C61130')
         .setTimestamp();
@@ -105,10 +105,10 @@ client.on('interactionCreate', async (interaction) => {
                 .join('\n')
 
             const scoreboardEmbed = new EmbedBuilder()
-                .setTitle('eCTF Scoreboard')
+                .setTitle('eCTF scoreboard')
                 .setDescription(desc)
                 .setColor('#C61130')
-                .setFooter({text: `Last scraped ${lastUpdated.toLocaleString()}`})
+                .setFooter({text: `Last fetched ${lastUpdated.toLocaleString()}`})
                 .setTimestamp();
             return void interaction.reply({embeds: [scoreboardEmbed]});
 
