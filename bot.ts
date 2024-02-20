@@ -1,5 +1,6 @@
 import {ActivityType, Client, EmbedBuilder} from 'discord.js';
-import {notifyChannelId, token} from './auth';
+import {statusToColor} from './messages';
+import {notifyChannelId, statusChannelId, statusMessageId, token} from './auth';
 
 
 const client = new Client({
@@ -90,8 +91,53 @@ async function fetchAndUpdateScoreboard() {
     await channel.send({embeds: [diffEmbed]});
 }
 
+type CommitInfo = {
+    hash: string,
+    name: string,
+    author: string,
+}
+export type BuildStatusUpdateReq = {
+    current: CommitInfo,
+    status: 'SUCCESS' | 'BUILDING' | 'FAILURE',
+    queue: CommitInfo[]
+}
+async function updateBuildStatus(req: BuildStatusUpdateReq) {
+    const channel = client.channels.cache.get(statusChannelId);
+    if (!channel?.isTextBased())
+        return console.error('Could not find build status channel!');
+
+    const message = channel.messages.cache.get(statusMessageId)
+        || await channel.messages.fetch(statusMessageId)
+        || channel.lastMessage;
+
+    const queueStatus = req.queue.map((d, i) => `${i + 1}. [\`${d.hash}\`]: ${d.name} (@${d.author})`).join('\n')
+        || '*No commits queued.*'
+
+    const statusEmbed = new EmbedBuilder()
+        .setTitle('Secure design build status')
+        .setDescription(`**Status:** ${req.status}`)
+        .addFields(
+            {name: 'Current commit:', value: `[\`${req.current.hash}\`]: ${req.current.name} (@${req.current.author})`},
+            {name: 'Queued:', value: queueStatus}
+        )
+        .setColor(statusToColor(req.status))
+
+    if (!message?.editable) return channel.send({embeds: [statusEmbed]});
+    return message.edit({embeds: [statusEmbed]});
+}
+
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user?.tag}!`);
+
+    void updateBuildStatus({
+        current: {
+            hash: 'test-commit-hash',
+            name: 'This is a test commit',
+            author: 'scrape-bot'
+        },
+        status: 'BUILDING',
+        queue: []
+    })
 });
 
 client.on('interactionCreate', async (interaction) => {
