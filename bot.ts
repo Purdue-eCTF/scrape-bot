@@ -1,6 +1,8 @@
+import express from 'express';
+import bodyParser from 'body-parser';
 import {ActivityType, Client, EmbedBuilder} from 'discord.js';
 import {statusToColor} from './messages';
-import {notifyChannelId, statusChannelId, statusMessageId, token} from './auth';
+import {notifyChannelId, port, statusChannelId, statusMessageId, token} from './auth';
 
 
 const client = new Client({
@@ -126,18 +128,20 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
     return message.edit({embeds: [statusEmbed]});
 }
 
+const server = express();
+
+server.use(bodyParser.json());
+server.post('/', async (req, res) => {
+    console.log(req.body, req.headers['content-type']);
+    await updateBuildStatus(req.body);
+    res.status(200).json({ok: true});
+});
+server.listen(port, () => {
+    console.log(`Started express server on port ${port}`);
+});
+
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user?.tag}!`);
-
-    void updateBuildStatus({
-        current: {
-            hash: 'test-commit-hash',
-            name: 'This is a test commit',
-            author: 'scrape-bot'
-        },
-        status: 'BUILDING',
-        queue: []
-    })
 });
 
 client.on('interactionCreate', async (interaction) => {
