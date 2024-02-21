@@ -132,9 +132,9 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         const failureChannel = client.channels.cache.get(failureChannelId);
 
         const failureEmbed = new EmbedBuilder()
-            .setTitle('Build failure')
+            .setTitle('Build failed for commit')
             .setColor(0xb50300)
-            .setDescription(`Build failed for commit [\`${req.current.hash}\`]: ${req.current.name} (@${req.current.author})\n[[Jump to failed workflow]](${runHref})`)
+            .setDescription(`[\`${req.current.hash}\`]: ${req.current.name} (@${req.current.author})\n[[Jump to failed workflow]](${runHref})`)
             .setTimestamp()
 
         if (failureChannel?.isTextBased())
