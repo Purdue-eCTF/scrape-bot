@@ -1,5 +1,5 @@
 type ActionResult = {
-    result: 'SUCCESS' | 'TESTING' | 'BUILDING' | 'PENDING' | 'FAILURE',
+    result: 'SUCCESS' | 'TESTING' | 'BUILDING' | 'PENDING' | 'FAILED',
     commit: {
         hash: string,
         name: string,
@@ -45,7 +45,7 @@ export function formatCommitShort(c: ActionResult) {
 export function statusToColor(status: ActionResult['result']) {
     switch (status) {
         case 'SUCCESS': return 0x79ff3b;
-        case 'FAILURE': return 0xb50300;
+        case 'FAILED': return 0xb50300;
         default: return 0xf6b40c;
     }
 }
@@ -53,7 +53,7 @@ export function statusToColor(status: ActionResult['result']) {
 function statusToCircle(status: ActionResult['result']) {
     switch (status) {
         case 'SUCCESS': return '🟢';
-        case 'FAILURE': return '🔴';
+        case 'FAILED': return '🔴';
         default: return '🟡';
     }
 }

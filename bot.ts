@@ -120,7 +120,7 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         .setTimestamp()
 
     // Report build failures to the appropriate channel
-    if (req.build.active.result === 'FAILURE') {
+    if (req.build.active.result === 'FAILED') {
         const failureChannel = client.channels.cache.get(failureChannelId);
 
         const failureEmbed = new EmbedBuilder()
