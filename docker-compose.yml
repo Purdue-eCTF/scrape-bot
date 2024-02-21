@@ -1,0 +1,10 @@
+version: "3.7"
+services:
+        ectf_scrape:
+                container_name: ectf_scrape_bot
+                build:
+                        dockerfile: ./Dockerfile
+                        context: ../scrape-bot
+                restart: always
+                
+                
