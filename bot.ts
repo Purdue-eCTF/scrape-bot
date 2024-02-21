@@ -1,7 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import {ActivityType, Client, EmbedBuilder} from 'discord.js';
-import {statusToColor} from './messages';
+import {BuildStatusUpdateReq, formatCommitShort, statusToColor} from './status';
 import {failureChannelId, notifyChannelId, port, statusChannelId, statusMessageId, token} from './auth';
 
 
@@ -93,17 +93,6 @@ async function fetchAndUpdateScoreboard() {
     await channel.send({embeds: [diffEmbed]});
 }
 
-type CommitInfo = {
-    hash: string,
-    name: string,
-    author: string,
-    runId: string,
-}
-export type BuildStatusUpdateReq = {
-    current: CommitInfo,
-    status: 'SUCCESS' | 'BUILDING' | 'TESTING' | 'FAILURE',
-    queue: CommitInfo[]
-}
 async function updateBuildStatus(req: BuildStatusUpdateReq) {
     const channel = client.channels.cache.get(statusChannelId);
     if (!channel?.isTextBased())
@@ -143,11 +132,6 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
 
     if (!message?.editable) return channel.send({embeds: [statusEmbed]});
     return message.edit({embeds: [statusEmbed]});
-}
-
-function formatCommitShort(c: CommitInfo) {
-    const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/${c.runId}`;
-    return `[\`${c.hash}\`]: ${c.name} (@${c.author}) [[link]](${runHref})`;
 }
 
 const server = express();
