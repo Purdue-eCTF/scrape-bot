@@ -106,7 +106,7 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
     const queueStatus = req.build.queue.map((d, i) => `${i + 1}. ${formatCommitShort(d)}`).join('\n')
         || '*No commits queued.*'
 
-    const piStatus = req.test.activeTests.map((s, i) => `${i + 1} ${formatPiStatus(s)}`).join('\n')
+    const piStatus = req.test.activeTests.map((s, i) => `${i + 1}. ${formatPiStatus(s)}`).join('\n')
 
     const statusEmbed = new EmbedBuilder()
         .setTitle('Secure design build status')
