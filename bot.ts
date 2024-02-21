@@ -132,9 +132,12 @@ const server = express();
 
 server.use(bodyParser.json());
 server.post('/', async (req, res) => {
-    console.log(req.body, req.headers['content-type']);
-    await updateBuildStatus(req.body);
-    res.status(200).json({ok: true});
+    try {
+        await updateBuildStatus(req.body);
+        res.status(200).json({ok: true});
+    } catch {
+        res.status(400).json({ok: false});
+    }
 });
 server.listen(port, () => {
     console.log(`Started express server on port ${port}`);
