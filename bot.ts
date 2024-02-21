@@ -1,7 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import {ActivityType, Client, EmbedBuilder} from 'discord.js';
-import {BuildStatusUpdateReq, formatCommitShort, statusToColor} from './status';
+import {BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor} from './status';
 import {failureChannelId, notifyChannelId, port, statusChannelId, statusMessageId, token} from './auth';
 
 
@@ -102,28 +102,31 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         || await channel.messages.fetch(statusMessageId)
         || channel.lastMessage;
 
-    const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/${req.current.runId}`;
-    const queueStatus = req.queue.map((d, i) => `${i + 1}. ${formatCommitShort(d)}`).join('\n')
+    const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/${req.build.active.commit.runId}`;
+    const queueStatus = req.build.queue.map((d, i) => `${i + 1}. ${formatCommitShort(d)}`).join('\n')
         || '*No commits queued.*'
+
+    const piStatus = req.test.activeTests.map((s, i) => `${i + 1} ${formatPiStatus(s)}`).join('\n')
 
     const statusEmbed = new EmbedBuilder()
         .setTitle('Secure design build status')
-        .setDescription(`**Status:** ${req.status}`)
+        .setDescription(`**Status:** ${req.build.active.result}`)
         .addFields(
-            {name: 'Current commit:', value: formatCommitShort(req.current)},
+            {name: 'Pis', value: piStatus},
+            {name: 'Building:', value: formatCommitShort(req.build.active)},
             {name: 'Queued:', value: queueStatus}
         )
-        .setColor(statusToColor(req.status))
+        .setColor(statusToColor(req.build.active.result))
         .setTimestamp()
 
     // Report build failures to the appropriate channel
-    if (req.status === 'FAILURE') {
+    if (req.build.active.result === 'FAILURE') {
         const failureChannel = client.channels.cache.get(failureChannelId);
 
         const failureEmbed = new EmbedBuilder()
             .setTitle('Build failed for commit')
             .setColor(0xb50300)
-            .setDescription(`[\`${req.current.hash}\`]: ${req.current.name} (@${req.current.author})\n[[Jump to failed workflow]](${runHref})`)
+            .setDescription(`[\`${req.build.active.commit.hash}\`]: ${req.build.active.commit.name} (@${req.build.active.commit.author})\n[[Jump to failed workflow]](${runHref})`)
             .setTimestamp()
 
         if (failureChannel?.isTextBased())
