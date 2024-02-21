@@ -15,7 +15,7 @@ type PiStatus = {
 }
 export type BuildStatusUpdateReq = {
     build: {
-        active: ActionResult
+        active?: ActionResult
         queue: ActionResult[]
     }
     test: {
@@ -39,7 +39,7 @@ export function formatCommitShort(c: ActionResult) {
     const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/${c.commit.runId}`;
     const ts = Math.floor(c.actionStart);
 
-    return `${statusToCircle(c.result)} [[\`${c.commit.hash.slice(0, 7)}\`]](${runHref}): ${c.commit.name} (@${c.commit.author}) updated <t:${ts}:R>`;
+    return `\\${statusToCircle(c.result)} [[\`${c.commit.hash.slice(0, 7)}\`]](${runHref}): ${c.commit.name} (@${c.commit.author}) updated <t:${ts}:R>`;
 }
 
 export function statusToColor(status: ActionResult['result']) {

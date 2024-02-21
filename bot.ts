@@ -102,31 +102,38 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         || await channel.messages.fetch(statusMessageId)
         || channel.lastMessage;
 
-    const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/${req.build.active.commit.runId}`;
     const queueStatus = req.build.queue.map((d, i) => `${i + 1}. ${formatCommitShort(d)}`).join('\n')
         || '*No commits queued.*'
+    const piStatus = req.test.activeTests.map((s, i) => `${i + 1}. ${formatPiStatus(s)}`).join('\n');
+    const buildStatus = req.build.active
+        ? formatCommitShort(req.build.active)
+        : '*No commits loaded.*'
 
-    const piStatus = req.test.activeTests.map((s, i) => `${i + 1}. ${formatPiStatus(s)}`).join('\n')
+    const color = req.build.active
+        ? statusToColor(req.build.active.result)
+        : '#27272a'
 
     const statusEmbed = new EmbedBuilder()
         .setTitle('Secure design build status')
-        .setDescription(`**Status:** ${req.build.active.result}`)
+        .setDescription(`**Status:** ${req.build.active?.result || 'N/A'}`)
         .addFields(
             {name: 'Pis', value: piStatus},
-            {name: 'Building:', value: formatCommitShort(req.build.active)},
+            {name: 'Building:', value: buildStatus},
             {name: 'Queued:', value: queueStatus}
         )
-        .setColor(statusToColor(req.build.active.result))
+        .setColor(color)
         .setTimestamp()
 
     // Report build failures to the appropriate channel
-    if (req.build.active.result === 'FAILED') {
+    if (req.build.active?.result === 'FAILED') {
+        const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/${req.build.active.commit.runId}`;
+
         const failureChannel = client.channels.cache.get(failureChannelId);
 
         const failureEmbed = new EmbedBuilder()
             .setTitle('Build failed for commit')
             .setColor(0xb50300)
-            .setDescription(`[\`${req.build.active.commit.hash}\`]: ${req.build.active.commit.name} (@${req.build.active.commit.author})\n[[Jump to failed workflow]](${runHref})`)
+            .setDescription(`[\`${req.build.active.commit.hash.slice(0, 7)}\`]: ${req.build.active.commit.name} (@${req.build.active.commit.author})\n[[Jump to failed workflow]](${runHref})`)
             .setTimestamp()
 
         if (failureChannel?.isTextBased())
