@@ -113,7 +113,7 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         || await channel.messages.fetch(statusMessageId)
         || channel.lastMessage;
 
-    const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/7967452649/job/${req.current.runId}`;
+    const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/${req.current.runId}`;
     const queueStatus = req.queue.map((d, i) => `${i + 1}. ${formatCommitShort(d)}`).join('\n')
         || '*No commits queued.*'
 
@@ -146,7 +146,7 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
 }
 
 function formatCommitShort(c: CommitInfo) {
-    const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/7967452649/job/${c.runId}`;
+    const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/${c.runId}`;
     return `[\`${c.hash}\`]: ${c.name} (@${c.author}) [[link]](${runHref})`;
 }
 
