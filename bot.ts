@@ -2,7 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import {ActivityType, Client, EmbedBuilder} from 'discord.js';
 import {statusToColor} from './messages';
-import {notifyChannelId, port, statusChannelId, statusMessageId, token} from './auth';
+import {failureChannelId, notifyChannelId, port, statusChannelId, statusMessageId, token} from './auth';
 
 
 const client = new Client({
@@ -123,6 +123,21 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
             {name: 'Queued:', value: queueStatus}
         )
         .setColor(statusToColor(req.status))
+        .setTimestamp()
+
+    // Report build failures to the appropriate channel
+    if (req.status === 'FAILURE') {
+        const failureChannel = client.channels.cache.get(failureChannelId);
+
+        const failureEmbed = new EmbedBuilder()
+            .setTitle('Build failure')
+            .setColor(0xb50300)
+            .setDescription(`Build failed for commit [\`${req.current.hash}\`]: ${req.current.name} (@${req.current.author})`)
+            .setTimestamp()
+
+        if (failureChannel?.isTextBased())
+            failureChannel.send({embeds: [failureEmbed]})
+    }
 
     if (!message?.editable) return channel.send({embeds: [statusEmbed]});
     return message.edit({embeds: [statusEmbed]});

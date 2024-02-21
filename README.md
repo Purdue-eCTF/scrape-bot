@@ -12,6 +12,7 @@ export const notifyChannelId = '...';
 
 export const statusChannelId = '...';
 export const statusMessageId = '...';
+export const failureChannelId = '...';
 
 export const port = 8080;
 ```
