@@ -97,6 +97,7 @@ type CommitInfo = {
     hash: string,
     name: string,
     author: string,
+    runId: string,
 }
 export type BuildStatusUpdateReq = {
     current: CommitInfo,
@@ -112,14 +113,15 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         || await channel.messages.fetch(statusMessageId)
         || channel.lastMessage;
 
-    const queueStatus = req.queue.map((d, i) => `${i + 1}. [\`${d.hash}\`]: ${d.name} (@${d.author})`).join('\n')
+    const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/7967452649/job/${req.current.runId}`;
+    const queueStatus = req.queue.map((d, i) => `${i + 1}. ${formatCommitShort(d)}`).join('\n')
         || '*No commits queued.*'
 
     const statusEmbed = new EmbedBuilder()
         .setTitle('Secure design build status')
         .setDescription(`**Status:** ${req.status}`)
         .addFields(
-            {name: 'Current commit:', value: `[\`${req.current.hash}\`]: ${req.current.name} (@${req.current.author})`},
+            {name: 'Current commit:', value: formatCommitShort(req.current)},
             {name: 'Queued:', value: queueStatus}
         )
         .setColor(statusToColor(req.status))
@@ -132,7 +134,7 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         const failureEmbed = new EmbedBuilder()
             .setTitle('Build failure')
             .setColor(0xb50300)
-            .setDescription(`Build failed for commit [\`${req.current.hash}\`]: ${req.current.name} (@${req.current.author})`)
+            .setDescription(`Build failed for commit [\`${req.current.hash}\`]: ${req.current.name} (@${req.current.author})\n[[Jump to failed workflow]](${runHref})`)
             .setTimestamp()
 
         if (failureChannel?.isTextBased())
@@ -141,6 +143,11 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
 
     if (!message?.editable) return channel.send({embeds: [statusEmbed]});
     return message.edit({embeds: [statusEmbed]});
+}
+
+function formatCommitShort(c: CommitInfo) {
+    const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/7967452649/job/${c.runId}`;
+    return `[\`${c.hash}\`]: ${c.name} (@${c.author}) [[link]](${runHref})`;
 }
 
 const server = express();
