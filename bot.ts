@@ -101,7 +101,7 @@ type CommitInfo = {
 }
 export type BuildStatusUpdateReq = {
     current: CommitInfo,
-    status: 'SUCCESS' | 'BUILDING' | 'FAILURE',
+    status: 'SUCCESS' | 'BUILDING' | 'TESTING' | 'FAILURE',
     queue: CommitInfo[]
 }
 async function updateBuildStatus(req: BuildStatusUpdateReq) {
