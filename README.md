@@ -21,3 +21,8 @@ in the first place. In such a case, leave the ID field blank, then force-send a 
 accordingly.
 
 Install dependencies with `npm install` and run `npm start` to start the bot.
+
+To run with docker,
+```bash
+docker-compose up -d
+```
