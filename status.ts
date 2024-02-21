@@ -30,7 +30,7 @@ export function formatPiStatus(s: PiStatus) {
     ) : !s.active ? (
         '*No images loaded.*'
     ) : (
-        `*Active for commit*\n${formatCommitShort(s.active)}\nStatus: ${s.active.result}\n`
+        `*Status ${s.active.result} for commit*\n${formatCommitShort(s.active)}\n`
     );
     return `\`${s.ip}\`: ${status}`;
 }
