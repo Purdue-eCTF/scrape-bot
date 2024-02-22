@@ -14,6 +14,7 @@ type PiStatus = {
     active?: ActionResult
 }
 export type BuildStatusUpdateReq = {
+    update: QueueUpdate | BuildUpdate | TestUpdate
     build: {
         active?: ActionResult
         queue: ActionResult[]
@@ -22,6 +23,18 @@ export type BuildStatusUpdateReq = {
         activeTests: PiStatus[]
         queue: ActionResult[]
     }
+}
+
+type QueueUpdate = {
+    type: 'QUEUE'
+}
+type BuildUpdate = {
+    type: 'BUILD',
+    state: ActionResult
+}
+type TestUpdate = {
+    type: 'TEST',
+    state: ActionResult
 }
 
 export function formatPiStatus(s: PiStatus) {

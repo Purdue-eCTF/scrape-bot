@@ -125,15 +125,18 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         .setTimestamp()
 
     // Report build failures to the appropriate channel
-    if (req.build.active?.result === 'FAILED') {
-        const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/${req.build.active.commit.runId}`;
+    if (
+        (req.update.type === 'BUILD' || req.update.type === 'TEST')
+        && req.update.state.result === 'FAILED'
+    ) {
+        const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/${req.update.state.commit.runId}`;
 
         const failureChannel = client.channels.cache.get(failureChannelId);
 
         const failureEmbed = new EmbedBuilder()
-            .setTitle('Tests failed for commit')
+            .setTitle(`${req.update.type === 'BUILD' ? 'Build' : 'Tests'} failed for commit`)
             .setColor(0xb50300)
-            .setDescription(`[\`${req.build.active.commit.hash.slice(0, 7)}\`]: ${req.build.active.commit.name} (@${req.build.active.commit.author})\n[[Jump to failed workflow]](${runHref})`)
+            .setDescription(`[\`${req.update.state.commit.hash.slice(0, 7)}\`]: ${req.update.state.commit.name} (@${req.update.state.commit.author})\n[[Jump to failed workflow]](${runHref})`)
             .setTimestamp()
 
         if (failureChannel?.isTextBased())
