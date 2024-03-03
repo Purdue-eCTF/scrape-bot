@@ -1,6 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import {ActivityType, Client, EmbedBuilder} from 'discord.js';
+import {ActivityType, Client, CommandInteraction, EmbedBuilder} from 'discord.js';
 import {CronJob} from 'cron';
 
 // Modules
@@ -25,7 +25,7 @@ const client = new Client({
 
 let broadcastDiffsJob: CronJob;
 
-async function broadcastDiffs() {
+async function broadcastDiffs(interaction?: CommandInteraction) {
     const totalDiffs: string[] = [];
 
     for (const team of Object.values(scoreboard)) {
@@ -47,14 +47,17 @@ async function broadcastDiffs() {
         }
     }
 
-    const channel = client.channels.cache.get(notifyChannelId);
-    if (!channel?.isTextBased()) return;
-
     const diffEmbed = new EmbedBuilder()
         .setTitle(`eCTF scoreboard report for ${new Date().toLocaleDateString()}`)
         .setDescription(totalDiffs.length ? totalDiffs.join('\n') : '*No scoreboard changes detected.*')
         .setColor('#C61130')
         .setTimestamp();
+
+    if (interaction)
+        return await interaction.reply({embeds: [diffEmbed]});
+
+    const channel = client.channels.cache.get(notifyChannelId);
+    if (!channel?.isTextBased()) return;
 
     await channel.send({embeds: [diffEmbed]});
 }
@@ -170,7 +173,7 @@ client.on('interactionCreate', async (interaction) => {
             return void interaction.reply({embeds: [refreshEmbed]});
 
         case 'report':
-            await broadcastDiffs();
+            await broadcastDiffs(interaction);
             return;
     }
 });
