@@ -12,6 +12,10 @@ const globalCommands = [
     new SlashCommandBuilder()
         .setName('refresh')
         .setDescription('Manually re-fetches the scoreboard data.')
+        .toJSON(),
+    new SlashCommandBuilder()
+        .setName('report')
+        .setDescription('Sends the current day\'s eCTF scoreboard report.')
         .toJSON()
 ];
 

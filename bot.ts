@@ -47,15 +47,12 @@ async function broadcastDiffs() {
         }
     }
 
-    // Broadcast diffs if they exist
-    if (!totalDiffs.length) return;
-
     const channel = client.channels.cache.get(notifyChannelId);
     if (!channel?.isTextBased()) return;
 
     const diffEmbed = new EmbedBuilder()
         .setTitle(`eCTF scoreboard report for ${new Date().toLocaleDateString()}`)
-        .setDescription(totalDiffs.join('\n'))
+        .setDescription(totalDiffs.length ? totalDiffs.join('\n') : '*No scoreboard changes detected.*')
         .setColor('#C61130')
         .setTimestamp();
 
@@ -137,7 +134,10 @@ client.once('ready', async () => {
     // Broadcast diffs daily
     broadcastDiffsJob = CronJob.from({
         cronTime: '0 0 0 * * *',
-        onTick: broadcastDiffs,
+        onTick: async () => {
+            await broadcastDiffs();
+            await fetchAndUpdateScoreboard(true); // Reset diffs after each day
+        },
         start: true,
         timeZone: 'America/Indiana/Indianapolis',
         runOnInit: false
@@ -168,6 +168,10 @@ client.on('interactionCreate', async (interaction) => {
                 .setDescription('Refreshed eCTF scoreboard data.')
                 .setColor('#C61130');
             return void interaction.reply({embeds: [refreshEmbed]});
+
+        case 'report':
+            await broadcastDiffs();
+            return;
     }
 });
 
