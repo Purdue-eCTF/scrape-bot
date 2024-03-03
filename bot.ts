@@ -1,6 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import {ActivityType, Client, EmbedBuilder} from 'discord.js';
+import {CronJob} from 'cron';
 
 // Modules
 import {BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor} from './status';
@@ -22,6 +23,7 @@ const client = new Client({
     allowedMentions: {repliedUser: false}
 });
 
+let broadcastDiffsJob: CronJob;
 
 async function broadcastDiffs() {
     const totalDiffs: string[] = [];
@@ -52,7 +54,7 @@ async function broadcastDiffs() {
     if (!channel?.isTextBased()) return;
 
     const diffEmbed = new EmbedBuilder()
-        .setTitle('Detected eCTF scoreboard diffs')
+        .setTitle(`eCTF scoreboard report for ${new Date().toLocaleDateString()}`)
         .setDescription(totalDiffs.join('\n'))
         .setColor('#C61130')
         .setTimestamp();
@@ -131,6 +133,15 @@ server.listen(port, () => {
 
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user?.tag}!`);
+
+    // Broadcast diffs daily
+    broadcastDiffsJob = CronJob.from({
+        cronTime: '0 0 0 * * *',
+        onTick: broadcastDiffs,
+        start: true,
+        timeZone: 'America/Indiana/Indianapolis',
+        runOnInit: false
+    });
 });
 
 client.on('interactionCreate', async (interaction) => {
