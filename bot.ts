@@ -9,6 +9,7 @@ import {fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5} from './scorebo
 
 // Config
 import {failureChannelId, notifyChannelId, port, statusChannelId, statusMessageId, token} from './auth';
+import {generateScript} from './flags';
 
 
 const client = new Client({
@@ -175,6 +176,26 @@ client.on('interactionCreate', async (interaction) => {
         case 'report':
             await broadcastDiffs(interaction);
             return;
+
+        case 'submit':
+            const team = interaction.options.get('team')?.value;
+            if (typeof team !== 'string') return;
+
+            const flag = interaction.options.get('flag')?.value;
+            if (typeof flag !== 'string') return;
+
+            const chall = interaction.options.get('challenge')?.value;
+            if (typeof chall !== 'number') return;
+
+            const delay = interaction.options.get('delay')?.value;
+            const script = generateScript(team, flag, chall, delay as number | undefined);
+
+            const scriptEmbed = new EmbedBuilder()
+                .setTitle('Flag submission script')
+                .setDescription(`\`\`\`js\n${script}\`\`\`\nPaste the above script into the console while logged in on \`sb.ectf.mitre.org\` to begin the flag submission process. To change any values while the script is running, edit them directly i.e\`\`\`js\nTEAM = 'UIUC'\`\`\``)
+                .setColor('#C61130')
+                .setTimestamp();
+            return void interaction.reply({embeds: [scriptEmbed]});
     }
 });
 
