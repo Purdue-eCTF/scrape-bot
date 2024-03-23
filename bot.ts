@@ -6,10 +6,10 @@ import {CronJob} from 'cron';
 // Modules
 import {BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor} from './status';
 import {fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5} from './scoreboard';
+import {generateScript} from './flags';
 
 // Config
 import {failureChannelId, notifyChannelId, port, statusChannelId, statusMessageId, token} from './auth';
-import {generateScript} from './flags';
 
 
 const client = new Client({
