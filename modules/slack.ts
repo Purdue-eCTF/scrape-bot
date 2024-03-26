@@ -15,19 +15,24 @@ app.message(async ({message}) => {
     if (message.type !== 'message') return;
     if (message.subtype !== 'file_share') return;
 
+    // Download zip files from the attack files channel, automatically unzipping and committing
+    // them to the targets repository.
     if (!message.files) return;
 
     for (const file of message.files.filter((f) => f.filetype === 'zip')) {
-        const buf = await (await fetch(file.url_private_download!)).arrayBuffer();
-        const zip = new AdmZip(Buffer.from(buf));
+        const buf = await (await fetch(file.url_private_download!, {
+            headers: {'Authorization': `Bearer ${SLACK_TOKEN}`}
+        })).arrayBuffer();
 
-        zip.extractAllTo(`/temp/${file.name!.slice(0, -4)}`);
+        const zip = new AdmZip(Buffer.from(buf));
+        zip.extractAllTo(`./temp/${file.name!.slice(0, -4)}`);
+
         execSync('cd temp && git status');
     }
 });
 
 export async function initGitRepo() {
     console.log('[GIT] Initializing git repository');
-    execSync(`git clone ${TARGETS_REPO_URL} temp || cd temp && git reset origin --hard`);
+    execSync(`git clone ${TARGETS_REPO_URL} temp || (cd temp && git reset origin --hard)`);
     console.log('[GIT] Finished initializing git repository');
 }
