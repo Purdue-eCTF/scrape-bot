@@ -4,12 +4,13 @@ import {ActivityType, Client, CommandInteraction, EmbedBuilder} from 'discord.js
 import {CronJob} from 'cron';
 
 // Modules
-import {BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor} from './status';
-import {fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5} from './scoreboard';
-import {generateScript} from './flags';
+import {BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor} from './modules/status';
+import {fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5} from './modules/scoreboard';
+import {generateScript} from './modules/flags';
+import {initSocket} from './modules/slack';
 
 // Config
-import {failureChannelId, notifyChannelId, port, statusChannelId, statusMessageId, token} from './auth';
+import {FAILURE_CHANNEL_ID, NOTIFY_CHANNEL_ID, EXPRESS_PORT, STATUS_CHANNEL_ID, STATUS_MESSAGE_ID, DISCORD_TOKEN} from './auth';
 
 
 const client = new Client({
@@ -57,19 +58,19 @@ async function broadcastDiffs(interaction?: CommandInteraction) {
     if (interaction)
         return await interaction.reply({embeds: [diffEmbed]});
 
-    const channel = client.channels.cache.get(notifyChannelId);
+    const channel = client.channels.cache.get(NOTIFY_CHANNEL_ID);
     if (!channel?.isTextBased()) return;
 
     await channel.send({embeds: [diffEmbed]});
 }
 
 async function updateBuildStatus(req: BuildStatusUpdateReq) {
-    const channel = client.channels.cache.get(statusChannelId);
+    const channel = client.channels.cache.get(STATUS_CHANNEL_ID);
     if (!channel?.isTextBased())
         return console.error('Could not find build status channel!');
 
-    const message = channel.messages.cache.get(statusMessageId)
-        || await channel.messages.fetch(statusMessageId)
+    const message = channel.messages.cache.get(STATUS_MESSAGE_ID)
+        || await channel.messages.fetch(STATUS_MESSAGE_ID)
         || channel.lastMessage;
 
     const queueStatus = req.build.queue.map((d, i) => `${i + 1}. ${formatCommitShort(d)}`).join('\n')
@@ -101,7 +102,7 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
     ) {
         const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/${req.update.state.commit.runId}`;
 
-        const failureChannel = client.channels.cache.get(failureChannelId);
+        const failureChannel = client.channels.cache.get(FAILURE_CHANNEL_ID);
 
         const failureEmbed = new EmbedBuilder()
             .setTitle(`${req.update.type === 'BUILD' ? 'Build' : 'Tests'} failed for commit`)
@@ -128,8 +129,8 @@ server.post('/', async (req, res) => {
         res.status(400).json({ok: false});
     }
 });
-server.listen(port, () => {
-    console.log(`Started express server on port ${port}`);
+server.listen(EXPRESS_PORT, () => {
+    console.log(`Started express server on port ${EXPRESS_PORT}`);
 });
 
 client.once('ready', async () => {
@@ -202,4 +203,5 @@ client.on('interactionCreate', async (interaction) => {
 void fetchAndUpdateScoreboard(true);
 setInterval(fetchAndUpdateScoreboard, 1000 * 60);
 
-void client.login(token);
+void client.login(DISCORD_TOKEN);
+void initSocket();

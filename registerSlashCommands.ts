@@ -1,7 +1,7 @@
 import {SlashCommandBuilder} from '@discordjs/builders';
 import {REST} from '@discordjs/rest';
 import {Routes} from 'discord-api-types/v9';
-import {token} from './auth';
+import {DISCORD_TOKEN} from './auth';
 
 
 const globalCommands = [
@@ -60,7 +60,7 @@ const globalCommands = [
 ];
 
 const clientId = '1199441161077674105';
-const rest = new REST({ version: '9' }).setToken(token);
+const rest = new REST({ version: '9' }).setToken(DISCORD_TOKEN);
 
 (async () => {
     try {
