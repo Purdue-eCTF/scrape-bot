@@ -20,12 +20,15 @@ app.message(async ({message}) => {
     if (!message.files) return;
 
     for (const file of message.files.filter((f) => f.filetype === 'zip')) {
+        console.log('[SLACK] Found', file.name);
+
         const buf = await (await fetch(file.url_private_download!, {
             headers: {'Authorization': `Bearer ${SLACK_TOKEN}`}
         })).arrayBuffer();
 
         const zip = new AdmZip(Buffer.from(buf));
         zip.extractAllTo(`./temp/${file.name!.slice(0, -4)}`);
+        console.log('[SLACK] Extracted', file.name);
 
         execSync('cd temp && git status');
     }
@@ -34,5 +37,6 @@ app.message(async ({message}) => {
 export async function initGitRepo() {
     console.log('[GIT] Initializing git repository');
     execSync(`git clone ${TARGETS_REPO_URL} temp || (cd temp && git reset origin --hard)`);
+    execSync('cd temp && git status');
     console.log('[GIT] Finished initializing git repository');
 }
