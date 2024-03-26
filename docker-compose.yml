@@ -8,4 +8,6 @@ services:
         ports:
             - "8080:8080"
             - "8081:8081"
+        volumes:
+            - ./temp:/app/temp
         restart: always
