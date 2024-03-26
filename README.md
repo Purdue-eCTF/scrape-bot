@@ -17,6 +17,8 @@ export const FAILURE_CHANNEL_ID = '...';
 export const SLACK_TOKEN = 'xoxp-very-real-slack-token';
 export const SLACK_SIGNING_SECRET = '...';
 
+export const TARGETS_REPO_URL = 'https://github.com/Purdue-eCTF-2024/2024-Targets';
+
 export const EXPRESS_PORT = 8080;
 export const BOLT_PORT = 8081;
 ```
@@ -45,8 +47,11 @@ Then, add OAuth scopes in `OAuth & Permissions`; you'll likely need `channels:hi
 
 ![image](https://gist.github.com/assets/60120929/f191375d-bc8c-41f6-8cbc-c3e5523c6ef1)
 
-Enable event subscriptions in `Event Subscriptions` and set the request URL to your `bolt-js` server URL. Note that
-your server should be running at this point to respond to Slack's `challenge` request.
+Enable event subscriptions in `Event Subscriptions` and set the request URL to your `bolt-js` server URL i.e.
+```
+http://ctf.b01lers.com:8081/slack/events
+```
+Note that your server should be running at this point to respond to Slack's `challenge` request.
 
 ![image](https://gist.github.com/assets/60120929/2752e955-e216-4312-a9e6-7c385a2e19cf)
 

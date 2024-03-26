@@ -15,7 +15,7 @@ export let top5: string[] = [];
 
 
 export async function fetchAndUpdateScoreboard(resetDiffs: boolean = false) {
-    console.log('Re-fetching eCTF scoreboard');
+    console.log('[SCORE] Re-fetching eCTF scoreboard');
     const raw = await (await fetch('https://sb.ectf.mitre.org/game/summary')).text();
 
     const tables = raw.matchAll(/<tbody class='.*?' id='.*?'>([^]+?)<\/tbody>/g);

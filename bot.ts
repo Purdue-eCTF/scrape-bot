@@ -7,7 +7,7 @@ import {CronJob} from 'cron';
 import {BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor} from './modules/status';
 import {fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5} from './modules/scoreboard';
 import {generateScript} from './modules/flags';
-import {app} from './modules/slack';
+import {app, initGitRepo} from './modules/slack';
 
 // Config
 import {
@@ -75,7 +75,7 @@ async function broadcastDiffs(interaction?: CommandInteraction) {
 async function updateBuildStatus(req: BuildStatusUpdateReq) {
     const channel = client.channels.cache.get(STATUS_CHANNEL_ID);
     if (!channel?.isTextBased())
-        return console.error('Could not find build status channel!');
+        return console.error('[BUILD] Could not find build status channel!');
 
     const message = channel.messages.cache.get(STATUS_MESSAGE_ID)
         || await channel.messages.fetch(STATUS_MESSAGE_ID)
@@ -138,11 +138,11 @@ server.post('/', async (req, res) => {
     }
 });
 server.listen(EXPRESS_PORT, () => {
-    console.log(`Started express server on port ${EXPRESS_PORT}`);
+    console.log(`[BUILD] Started express server on port ${EXPRESS_PORT}`);
 });
 
 client.once('ready', async () => {
-    console.log(`Logged in as ${client.user?.tag}!`);
+    console.log(`[DISC] Logged in as ${client.user?.tag}!`);
 
     // Broadcast diffs daily
     broadcastDiffsJob = CronJob.from({
@@ -207,6 +207,8 @@ client.on('interactionCreate', async (interaction) => {
             return void interaction.reply({embeds: [scriptEmbed]});
     }
 });
+
+void initGitRepo();
 
 void fetchAndUpdateScoreboard(true);
 setInterval(fetchAndUpdateScoreboard, 1000 * 60);
