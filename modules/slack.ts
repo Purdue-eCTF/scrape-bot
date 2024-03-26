@@ -26,17 +26,18 @@ app.message(async ({message}) => {
             headers: {'Authorization': `Bearer ${SLACK_TOKEN}`}
         })).arrayBuffer();
 
+        const name = file.name!.slice(0, -4);
+
         const zip = new AdmZip(Buffer.from(buf));
-        zip.extractAllTo(`./temp/${file.name!.slice(0, -4)}`);
+        zip.extractEntryTo(`${name}/`, `./temp`, true, true); // TODO: spotty?
         console.log('[SLACK] Extracted', file.name);
 
-        execSync('cd temp && git status');
+        execSync(`cd temp && git add . && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${file.name}" && git push`);
     }
 });
 
 export async function initGitRepo() {
     console.log('[GIT] Initializing git repository');
     execSync(`git clone ${TARGETS_REPO_URL} temp || (cd temp && git reset origin --hard)`);
-    execSync('cd temp && git status');
-    console.log('[GIT] Finished initializing git repository');
+    console.log(execSync('cd temp && git status').toString());
 }
