@@ -4,7 +4,7 @@
 https://discord.com/oauth2/authorize?client_id=1199441161077674105&scope=bot+applications.commands&permissions=8
 
 ### Running locally
-Create a file called `auth.ts` that exports your Discord token, Slack user token, express server port, and channel / message IDs:
+Create a file called `auth.ts` that exports your Discord token, Slack bot info, express / bolt.js server ports, and channel / message IDs:
 ```ts
 // auth.ts
 export const DISCORD_TOKEN = 'very-real-discord-token';
@@ -15,14 +15,18 @@ export const STATUS_MESSAGE_ID = '...';
 export const FAILURE_CHANNEL_ID = '...';
 
 export const SLACK_TOKEN = 'xoxp-very-real-slack-token';
+export const SLACK_SIGNING_SECRET = '...';
 
 export const EXPRESS_PORT = 8080;
+export const BOLT_PORT = 8081;
 ```
 For build status integration, the ID of the build message can't really be obtained until a build status message is sent
 in the first place. In such a case, leave the ID field blank, then force-send a status message and update the ID
 accordingly.
 
-Install dependencies with `npm install` and run `npm start` to start the bot.
+See the **Slack autodownload** section for how to configure the required Slack secrets.
+
+Then, install dependencies with `npm install` and run `npm start` to start the bot.
 
 To run with docker,
 ```bash
@@ -32,7 +36,8 @@ docker-compose up -d --build
 ### Slack autodownload
 - `/modules/slack.ts`
 
-To set up the Slack integration, create a new Slack app in the [Slack API portal](https://api.slack.com/apps).
+To set up the Slack integration, create a new Slack app in the [Slack API portal](https://api.slack.com/apps). After
+creating, you can copy in your Slack token and signing secret to `auth.ts`.
 
 ![image](https://gist.github.com/assets/60120929/3e8de891-ae53-406a-aaba-2d668967854e)
 
@@ -40,7 +45,8 @@ Then, add OAuth scopes in `OAuth & Permissions`; you'll likely need `channels:hi
 
 ![image](https://gist.github.com/assets/60120929/f191375d-bc8c-41f6-8cbc-c3e5523c6ef1)
 
-Enable event subscriptions in `Event Subscriptions` and set the request URL to your `bolt-js` server URL.
+Enable event subscriptions in `Event Subscriptions` and set the request URL to your `bolt-js` server URL. Note that
+your server should be running at this point to respond to Slack's `challenge` request.
 
 ![image](https://gist.github.com/assets/60120929/2752e955-e216-4312-a9e6-7c385a2e19cf)
 

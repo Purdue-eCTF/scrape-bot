@@ -7,10 +7,18 @@ import {CronJob} from 'cron';
 import {BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor} from './modules/status';
 import {fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5} from './modules/scoreboard';
 import {generateScript} from './modules/flags';
-import {initSocket} from './modules/slack';
+import {app} from './modules/slack';
 
 // Config
-import {FAILURE_CHANNEL_ID, NOTIFY_CHANNEL_ID, EXPRESS_PORT, STATUS_CHANNEL_ID, STATUS_MESSAGE_ID, DISCORD_TOKEN} from './auth';
+import {
+    FAILURE_CHANNEL_ID,
+    NOTIFY_CHANNEL_ID,
+    EXPRESS_PORT,
+    STATUS_CHANNEL_ID,
+    STATUS_MESSAGE_ID,
+    DISCORD_TOKEN,
+    BOLT_PORT
+} from './auth';
 
 
 const client = new Client({
@@ -204,4 +212,4 @@ void fetchAndUpdateScoreboard(true);
 setInterval(fetchAndUpdateScoreboard, 1000 * 60);
 
 void client.login(DISCORD_TOKEN);
-void initSocket();
+void app.start(BOLT_PORT);
