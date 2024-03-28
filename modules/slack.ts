@@ -1,6 +1,7 @@
 import {App} from '@slack/bolt';
 import AdmZip from 'adm-zip';
 import {execSync} from 'node:child_process';
+import {notifyTargetPush} from '../bot';
 import {ATTACK_CHANNEL_ID, SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL} from '../auth';
 
 
@@ -20,6 +21,8 @@ app.message(async ({message}) => {
     if (message.channel !== ATTACK_CHANNEL_ID) return;
     if (!message.files) return;
 
+    const messages: string[] = [];
+
     for (const file of message.files.filter((f) => f.filetype === 'zip')) {
         console.log('[SLACK] Found', file.name);
 
@@ -34,7 +37,10 @@ app.message(async ({message}) => {
         console.log('[SLACK] Extracted', file.name);
 
         execSync(`cd temp && git add . && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${file.name}" && git push`);
+        messages.push(`- ${name} (\`${name}.zip\`)`);
     }
+
+    await notifyTargetPush(messages);
 });
 
 export async function initGitRepo() {

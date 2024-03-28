@@ -8,7 +8,7 @@ Create a file called `auth.ts` that exports your Discord token, Slack bot info, 
 ```ts
 // auth.ts
 export const DISCORD_TOKEN = 'very-real-discord-token';
-export const NOTIFY_CHANNEL_ID = '...';
+export const SCOREBOARD_NOTIFY_CHANNEL_ID = '...';
 
 export const STATUS_CHANNEL_ID = '...';
 export const STATUS_MESSAGE_ID = '...';
@@ -18,6 +18,7 @@ export const SLACK_TOKEN = 'xoxp-very-real-slack-token';
 export const SLACK_SIGNING_SECRET = '...';
 
 export const ATTACK_CHANNEL_ID = 'C06D0SZDF5K';
+export const ATTACK_NOTIFY_CHANNEL_ID = '...';
 
 export const TARGETS_REPO_URL = 'https://username:token@github.com/Purdue-eCTF-2024/2024-Targets';
 

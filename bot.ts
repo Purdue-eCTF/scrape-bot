@@ -12,12 +12,13 @@ import {app, initGitRepo} from './modules/slack';
 // Config
 import {
     FAILURE_CHANNEL_ID,
-    NOTIFY_CHANNEL_ID,
+    SCOREBOARD_NOTIFY_CHANNEL_ID,
     EXPRESS_PORT,
     STATUS_CHANNEL_ID,
     STATUS_MESSAGE_ID,
     DISCORD_TOKEN,
-    BOLT_PORT
+    BOLT_PORT,
+    ATTACK_NOTIFY_CHANNEL_ID
 } from './auth';
 
 
@@ -66,10 +67,23 @@ async function broadcastDiffs(interaction?: CommandInteraction) {
     if (interaction)
         return await interaction.reply({embeds: [diffEmbed]});
 
-    const channel = client.channels.cache.get(NOTIFY_CHANNEL_ID);
+    const channel = client.channels.cache.get(SCOREBOARD_NOTIFY_CHANNEL_ID);
     if (!channel?.isTextBased()) return;
 
     await channel.send({embeds: [diffEmbed]});
+}
+
+export async function notifyTargetPush(messages: string[]) {
+    const pushEmbed = new EmbedBuilder()
+        .setTitle('New target pushed to targets repository')
+        .setDescription(messages.join('\n'))
+        .setColor('#C61130')
+        .setTimestamp();
+
+    const channel = client.channels.cache.get(ATTACK_NOTIFY_CHANNEL_ID);
+    if (!channel?.isTextBased()) return;
+
+    await channel.send({embeds: [pushEmbed]});
 }
 
 async function updateBuildStatus(req: BuildStatusUpdateReq) {
