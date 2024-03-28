@@ -17,11 +17,15 @@ export const FAILURE_CHANNEL_ID = '...';
 export const SLACK_TOKEN = 'xoxp-very-real-slack-token';
 export const SLACK_SIGNING_SECRET = '...';
 
-export const TARGETS_REPO_URL = 'https://github.com/Purdue-eCTF-2024/2024-Targets';
+export const ATTACK_CHANNEL_ID = 'C06D0SZDF5K';
+
+export const TARGETS_REPO_URL = 'https://username:token@github.com/Purdue-eCTF-2024/2024-Targets';
 
 export const EXPRESS_PORT = 8080;
 export const BOLT_PORT = 8081;
 ```
+**For the targets repository URL, make sure to include credentials with push access.**
+
 For build status integration, the ID of the build message can't really be obtained until a build status message is sent
 in the first place. In such a case, leave the ID field blank, then force-send a status message and update the ID
 accordingly.
