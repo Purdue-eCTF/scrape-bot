@@ -1,25 +1,26 @@
-import express from 'express';
-import bodyParser from 'body-parser';
-import {ActivityType, Client, CommandInteraction, EmbedBuilder} from 'discord.js';
-import {CronJob} from 'cron';
+import bodyParser from 'body-parser'
+import { CronJob } from 'cron'
+import { ActivityType, Client, CommandInteraction, EmbedBuilder } from 'discord.js'
+import express from 'express'
 
 // Modules
-import {BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor} from './modules/status';
-import {fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5} from './modules/scoreboard';
-import {generateScript} from './modules/flags';
-import {app, initGitRepo} from './modules/slack';
+import { generateScript } from './modules/flags'
+import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard'
+import { app, initTargetsRepo } from './modules/slack'
+import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status'
 
 // Config
 import {
+    ATTACK_NOTIFY_CHANNEL_ID,
+    BOLT_PORT,
+    DISCORD_TOKEN,
+    EXPRESS_PORT,
     FAILURE_CHANNEL_ID,
     SCOREBOARD_NOTIFY_CHANNEL_ID,
-    EXPRESS_PORT,
     STATUS_CHANNEL_ID,
-    STATUS_MESSAGE_ID,
-    DISCORD_TOKEN,
-    BOLT_PORT,
-    ATTACK_NOTIFY_CHANNEL_ID
-} from './auth';
+    STATUS_MESSAGE_ID
+} from './auth'
+import { AttackState } from './modules/supply'
 
 
 const client = new Client({
@@ -140,6 +141,43 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
     return message.edit({embeds: [statusEmbed]});
 }
 
+export async function updateAttackStatus(state: AttackState) {
+    const fields = state.steps.map((step, index) => {
+        let head = `${state.currentStep == index ? "> " : ""}${index + 1} `
+        let time = '';
+        if (step.runTime !== undefined) {
+            time = ` (\`${Math.round(step.runTime/10)/100}s\`)`
+        } else if (step.startTime !== undefined) {
+            time = ` (<t:${Math.round(step.startTime/1000)}:R>)`
+        }
+        return {
+            name: head + step.name + time,
+            value: step.detail ?? "",
+            inline: false
+        }
+    });
+
+    const statusEmbed = new EmbedBuilder()
+        .setTitle(`${state.team} attack status`)
+        .setDescription(`**Status:** ${state.status}`)
+        .addFields(fields)
+        .setColor(statusToColor(state.status))
+        .setTimestamp();
+
+    const channel = client.channels.cache.get(ATTACK_NOTIFY_CHANNEL_ID);
+    if (!channel?.isTextBased()) return;
+
+    if (!state.messageId) {
+        const message = await channel.send({embeds: [statusEmbed]});
+        state.messageId = message.id;
+    } else {
+        const message = channel.messages.cache.get(state.messageId)
+            || await channel.messages.fetch(state.messageId);
+        if (!message) return;
+        await message.edit({embeds: [statusEmbed]});
+    }
+}
+
 const server = express();
 
 server.use(bodyParser.json());
@@ -222,7 +260,7 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-void initGitRepo();
+void initTargetsRepo();
 
 void fetchAndUpdateScoreboard(true);
 setInterval(fetchAndUpdateScoreboard, 1000 * 60);

@@ -1,8 +1,8 @@
-import {App} from '@slack/bolt';
-import AdmZip from 'adm-zip';
-import {execSync} from 'node:child_process';
-import {notifyTargetPush} from '../bot';
-import {ATTACK_CHANNEL_ID, SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL} from '../auth';
+import { App } from '@slack/bolt'
+import AdmZip from 'adm-zip'
+import { execSync } from 'node:child_process'
+import { ATTACK_CHANNEL_ID, SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth'
+import { notifyTargetPush } from '../bot'
 
 
 export const app = new App({
@@ -33,18 +33,18 @@ app.message(async ({message}) => {
         const name = file.name!.slice(0, -4);
 
         const zip = new AdmZip(Buffer.from(buf));
-        zip.extractEntryTo(`${name}/`, `./temp`, true, true); // TODO: spotty?
+        zip.extractEntryTo(`${name}/`, `./targets`, true, true); // TODO: spotty?
         console.log('[SLACK] Extracted', file.name);
 
-        execSync(`cd temp && git add . && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${file.name}" && git push`);
+        execSync(`cd targets && git add . && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${file.name}" && git push`);
         messages.push(`- ${name} (\`${name}.zip\`)`);
     }
 
     await notifyTargetPush(messages);
 });
 
-export async function initGitRepo() {
-    console.log('[GIT] Initializing git repository');
-    execSync(`git clone ${TARGETS_REPO_URL} temp || (cd temp && git reset origin --hard)`);
-    console.log(execSync('cd temp && git status').toString());
+export async function initTargetsRepo() {
+    console.log('[GIT] Initializing targets repository');
+    execSync(`git clone ${TARGETS_REPO_URL} targets || (cd targets && git reset origin --hard)`);
+    console.log(execSync('cd targets && git status').toString());
 }

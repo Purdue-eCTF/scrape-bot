@@ -2,3 +2,7 @@ node_modules
 auth.ts
 .idea
 temp
+targets
+exploit
+.DS_Store
+bun.lockb
