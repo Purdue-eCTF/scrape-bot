@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node bot.ts",
-    "registerSlashCommands": "ts-node registerSlashCommands.ts"
+    "registerSlashCommands": "ts-node registerSlashCommands.ts",
+    "testAttackPipeline": "ts-node testAttackPipeline.ts"
   },
   "author": "ky28059",
   "license": "MIT",

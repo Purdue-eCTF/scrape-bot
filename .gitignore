@@ -2,7 +2,10 @@ node_modules
 auth.ts
 .idea
 temp
+
+# Cloned repositories
 targets
 exploit
+
 .DS_Store
 bun.lockb

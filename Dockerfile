@@ -12,11 +12,11 @@ RUN nix-channel --update && \
 WORKDIR /app
 COPY . .
 RUN curl -LOL https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_11.0.2_build/ghidra_11.0.2_PUBLIC_20240326.zip && \
-	unzip ghidra_11.0.2_PUBLIC_20240326.zip && \
-	rm ghidra_11.0.2_PUBLIC_20240326.zip
+    unzip ghidra_11.0.2_PUBLIC_20240326.zip && \
+    rm ghidra_11.0.2_PUBLIC_20240326.zip
 RUN mkdir ghidra_proj
 RUN npm i
 
 RUN cd default-nix-cache && cached-nix-shell --run "cargo install cargo-make"
 
-CMD ["bash"]
+CMD ["npm", "run", "testAttackPipeline"]

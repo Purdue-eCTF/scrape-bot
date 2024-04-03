@@ -1,8 +1,11 @@
 import { App } from '@slack/bolt'
 import AdmZip from 'adm-zip'
-import { execSync } from 'node:child_process'
+import { exec as execCallback } from 'node:child_process'
 import { ATTACK_CHANNEL_ID, SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth'
 import { notifyTargetPush } from '../bot'
+import { promisify } from 'util';
+
+const exec = promisify(execCallback);
 
 
 export const app = new App({
@@ -36,7 +39,10 @@ app.message(async ({message}) => {
         zip.extractEntryTo(`${name}/`, `./targets`, true, true); // TODO: spotty?
         console.log('[SLACK] Extracted', file.name);
 
-        execSync(`cd targets && git add . && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${file.name}" && git push`);
+        // Run automated exploits
+        // TODO
+
+        await exec(`cd targets && git add . && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${file.name}" && git push`);
         messages.push(`- ${name} (\`${name}.zip\`)`);
     }
 
@@ -45,6 +51,6 @@ app.message(async ({message}) => {
 
 export async function initTargetsRepo() {
     console.log('[GIT] Initializing targets repository');
-    execSync(`git clone ${TARGETS_REPO_URL} targets || (cd targets && git reset origin --hard)`);
-    console.log(execSync('cd targets && git status').toString());
+    await exec(`git clone ${TARGETS_REPO_URL} targets || (cd targets && git reset origin --hard)`);
+    console.log((await exec('cd targets && git status')).stdout);
 }

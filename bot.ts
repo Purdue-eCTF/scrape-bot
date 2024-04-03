@@ -142,25 +142,18 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
 }
 
 export async function updateAttackStatus(state: AttackState) {
-    const fields = state.steps.map((step, index) => {
-        let head = `${state.currentStep == index ? "> " : ""}${index + 1} `
-        let time = '';
-        if (step.runTime !== undefined) {
-            time = ` (\`${Math.round(step.runTime/10)/100}s\`)`
-        } else if (step.startTime !== undefined) {
-            time = ` (<t:${Math.round(step.startTime/1000)}:R>)`
-        }
-        return {
-            name: head + step.name + time,
-            value: step.detail ?? "",
-            inline: false
-        }
-    });
+    const stepInfo = state.steps.map((step, i) => {
+        const time =
+            (step.runTime !== undefined) ? `(\`${Math.round(step.runTime / 10) / 100}s\`)` :
+            (step.startTime !== undefined) ? `(<t:${Math.round(step.startTime / 1000)}:R>)` :
+            '';
+
+        return `${i + 1} **${step.name} ${time}**` + (step.detail ? ` — ${step.detail}` : '')
+    }).join('\n');
 
     const statusEmbed = new EmbedBuilder()
         .setTitle(`${state.team} attack status`)
-        .setDescription(`**Status:** ${state.status}`)
-        .addFields(fields)
+        .setDescription(`**Status:** ${state.status}\n${stepInfo}`)
         .setColor(statusToColor(state.status))
         .setTimestamp();
 
@@ -170,12 +163,14 @@ export async function updateAttackStatus(state: AttackState) {
     if (!state.messageId) {
         const message = await channel.send({embeds: [statusEmbed]});
         state.messageId = message.id;
-    } else {
-        const message = channel.messages.cache.get(state.messageId)
-            || await channel.messages.fetch(state.messageId);
-        if (!message) return;
-        await message.edit({embeds: [statusEmbed]});
+        return;
     }
+
+    const message = channel.messages.cache.get(state.messageId)
+        || await channel.messages.fetch(state.messageId);
+    if (!message) return;
+
+    await message.edit({embeds: [statusEmbed]});
 }
 
 const server = express();

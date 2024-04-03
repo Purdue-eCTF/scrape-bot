@@ -1,4 +1,9 @@
 .git
 .idea
+.gitattributes
+.gitignore
+LICENSE
+
+# Cloned repositories
 targets
 exploit
