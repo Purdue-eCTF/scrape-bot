@@ -1,8 +1,8 @@
-import {App} from '@slack/bolt';
+import { App } from '@slack/bolt';
 import AdmZip from 'adm-zip';
-import {execSync} from 'node:child_process';
-import {notifyTargetPush} from '../bot';
-import {ATTACK_CHANNEL_ID, SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL} from '../auth';
+import { execSync } from 'node:child_process';
+import { notifyTargetPush } from '../bot';
+import { ATTACK_CHANNEL_ID, SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
 
 
 export const app = new App({
@@ -10,7 +10,7 @@ export const app = new App({
     signingSecret: SLACK_SIGNING_SECRET
 });
 
-app.message(async ({message}) => {
+app.message(async ({ message }) => {
     console.log('[SLACK]', message);
 
     if (message.type !== 'message') return;
@@ -27,7 +27,7 @@ app.message(async ({message}) => {
         console.log('[SLACK] Found', file.name);
 
         const buf = await (await fetch(file.url_private_download!, {
-            headers: {'Authorization': `Bearer ${SLACK_TOKEN}`}
+            headers: { 'Authorization': `Bearer ${SLACK_TOKEN}` }
         })).arrayBuffer();
 
         const name = file.name!.slice(0, -4);

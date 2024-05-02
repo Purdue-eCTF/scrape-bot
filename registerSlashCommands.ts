@@ -1,7 +1,7 @@
-import {SlashCommandBuilder} from '@discordjs/builders';
-import {REST} from '@discordjs/rest';
-import {Routes} from 'discord-api-types/v9';
-import {DISCORD_TOKEN} from './auth';
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { REST } from '@discordjs/rest';
+import { Routes } from 'discord-api-types/v9';
+import { DISCORD_TOKEN } from './auth';
 
 
 const globalCommands = [

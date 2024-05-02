@@ -1,5 +1,5 @@
 # scrape-bot
- Scrapes the eCTF scoreboard for rank changes.
+Scrapes the eCTF scoreboard for rank changes.
 
 https://discord.com/oauth2/authorize?client_id=1199441161077674105&scope=bot+applications.commands&permissions=8
 
@@ -81,11 +81,13 @@ build status alerting during the dev phase.
 <img width="450" src="https://gist.github.com/assets/60120929/24fcbcc5-56ef-4031-8b28-aa9e38e226cc">
 <img width="450" src="https://gist.github.com/assets/60120929/3d080e03-cef9-4138-9f9f-c81d96d0c6fc">
 
+Make sure the build server is configured to send POST requests to this bot's exposed express endpoint properly.
+
 ### Flag submission userscript
 - `/modules/flags.ts`
 
-In case a Tufts situation occurs again, this bot contains a generator for a script to automatically scrape the flag
-submission page and submit a flag as soon as it becomes possible.
+In case a Tufts situation occurs again, this bot contains a generator for a userscript to automatically scrape the flag
+submission page and submit a flag as soon as possible.
 
 <p align="center">
     <img width="700" src="https://gist.github.com/assets/60120929/602c2399-aeba-4943-8e26-ffa7ce251ccf">

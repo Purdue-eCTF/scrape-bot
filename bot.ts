@@ -1,13 +1,13 @@
+import { ActivityType, Client, CommandInteraction, EmbedBuilder } from 'discord.js';
+import { CronJob } from 'cron';
 import express from 'express';
 import bodyParser from 'body-parser';
-import {ActivityType, Client, CommandInteraction, EmbedBuilder} from 'discord.js';
-import {CronJob} from 'cron';
 
 // Modules
-import {BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor} from './modules/status';
-import {fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5} from './modules/scoreboard';
-import {generateScript} from './modules/flags';
-import {app, initGitRepo} from './modules/slack';
+import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
+import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
+import { generateScript } from './modules/flags';
+import { app, initGitRepo } from './modules/slack';
 
 // Config
 import {
@@ -30,8 +30,8 @@ const client = new Client({
         "GuildMembers",
         "GuildMessageReactions",
     ],
-    presence: {activities: [{type: ActivityType.Watching, name: 'the eCTF scoreboard'}]},
-    allowedMentions: {repliedUser: false}
+    presence: { activities: [{ type: ActivityType.Watching, name: 'the eCTF scoreboard' }] },
+    allowedMentions: { repliedUser: false }
 });
 
 let broadcastDiffsJob: CronJob;
@@ -65,12 +65,12 @@ async function broadcastDiffs(interaction?: CommandInteraction) {
         .setTimestamp();
 
     if (interaction)
-        return await interaction.reply({embeds: [diffEmbed]});
+        return await interaction.reply({ embeds: [diffEmbed] });
 
     const channel = client.channels.cache.get(SCOREBOARD_NOTIFY_CHANNEL_ID);
     if (!channel?.isTextBased()) return;
 
-    await channel.send({embeds: [diffEmbed]});
+    await channel.send({ embeds: [diffEmbed] });
 }
 
 export async function notifyTargetPush(messages: string[]) {
@@ -83,7 +83,7 @@ export async function notifyTargetPush(messages: string[]) {
     const channel = client.channels.cache.get(ATTACK_NOTIFY_CHANNEL_ID);
     if (!channel?.isTextBased()) return;
 
-    await channel.send({embeds: [pushEmbed]});
+    await channel.send({ embeds: [pushEmbed] });
 }
 
 async function updateBuildStatus(req: BuildStatusUpdateReq) {
@@ -110,9 +110,9 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         .setTitle('Secure design build status')
         .setDescription(`**Status:** ${req.build.active?.result || 'N/A'}`)
         .addFields(
-            {name: 'Pis', value: piStatus},
-            {name: 'Building:', value: buildStatus},
-            {name: 'Queued:', value: queueStatus}
+            { name: 'Pis', value: piStatus },
+            { name: 'Building:', value: buildStatus },
+            { name: 'Queued:', value: queueStatus }
         )
         .setColor(color)
         .setTimestamp()
@@ -133,11 +133,11 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
             .setTimestamp()
 
         if (failureChannel?.isTextBased())
-            failureChannel.send({embeds: [failureEmbed]})
+            failureChannel.send({ embeds: [failureEmbed] })
     }
 
-    if (!message?.editable) return channel.send({embeds: [statusEmbed]});
-    return message.edit({embeds: [statusEmbed]});
+    if (!message?.editable) return channel.send({ embeds: [statusEmbed] });
+    return message.edit({ embeds: [statusEmbed] });
 }
 
 const server = express();
@@ -146,9 +146,9 @@ server.use(bodyParser.json());
 server.post('/', async (req, res) => {
     try {
         await updateBuildStatus(req.body);
-        res.status(200).json({ok: true});
+        res.status(200).json({ ok: true });
     } catch {
-        res.status(400).json({ok: false});
+        res.status(400).json({ ok: false });
     }
 });
 server.listen(EXPRESS_PORT, () => {
@@ -185,16 +185,16 @@ client.on('interactionCreate', async (interaction) => {
                 .setTitle('eCTF scoreboard')
                 .setDescription(desc)
                 .setColor('#C61130')
-                .setFooter({text: `Last fetched ${lastUpdated.toLocaleString()}`})
+                .setFooter({ text: `Last fetched ${lastUpdated.toLocaleString()}` })
                 .setTimestamp();
-            return void interaction.reply({embeds: [scoreboardEmbed]});
+            return void interaction.reply({ embeds: [scoreboardEmbed] });
 
         case 'refresh':
             await fetchAndUpdateScoreboard();
             const refreshEmbed = new EmbedBuilder()
                 .setDescription('Refreshed eCTF scoreboard data.')
                 .setColor('#C61130');
-            return void interaction.reply({embeds: [refreshEmbed]});
+            return void interaction.reply({ embeds: [refreshEmbed] });
 
         case 'report':
             await broadcastDiffs(interaction);
@@ -218,7 +218,7 @@ client.on('interactionCreate', async (interaction) => {
                 .setDescription(`\`\`\`js\n${script}\`\`\`\nPaste the above script into the console while logged in on \`sb.ectf.mitre.org\` to begin the flag submission process. To change any values while the script is running, edit them directly i.e\`\`\`js\nTEAM = 'UIUC'\`\`\``)
                 .setColor('#C61130')
                 .setTimestamp();
-            return void interaction.reply({embeds: [scriptEmbed]});
+            return void interaction.reply({ embeds: [scriptEmbed] });
     }
 });
 

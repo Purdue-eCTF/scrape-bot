@@ -9,7 +9,7 @@ type TeamData = {
     prevAchievements: number,
     prevPoints: number,
 }
-export const scoreboard: {[name: string]: TeamData} = {};
+export const scoreboard: { [name: string]: TeamData } = {};
 export let lastUpdated: Date;
 export let top5: string[] = [];
 
