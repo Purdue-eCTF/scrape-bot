@@ -38,6 +38,8 @@ export async function fetchAndUpdateScoreboard(resetDiffs: boolean = false) {
         headers: { 'Authorization': CTFD_API_KEY }
     })).json() as CtfdResponse;
 
+    lastUpdated = new Date();
+
     for (const { pos, name, score, account_url } of res.data) {
         const absoluteHref = `https://ectf.ctfd.io/${account_url}`;
 

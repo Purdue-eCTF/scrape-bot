@@ -199,7 +199,7 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-void initGitRepo();
+// void initGitRepo();
 
 void fetchAndUpdateScoreboard(true);
 setInterval(fetchAndUpdateScoreboard, 1000 * 60);
