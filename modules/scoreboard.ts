@@ -1,49 +1,55 @@
+import { CTFD_API_KEY } from '../auth';
+
+
 type TeamData = {
     name: string,
     rank: number,
     href: string,
-    achievements: number,
     points: number,
 
     prevRank: number,
-    prevAchievements: number,
     prevPoints: number,
 }
 export const scoreboard: { [name: string]: TeamData } = {};
 export let lastUpdated: Date;
 export let top5: string[] = [];
 
+type CtfdResponse = {
+    success: true,
+    data: CtfdScoreboardData[],
+}
+
+type CtfdScoreboardData = {
+    pos: number,
+    account_id: number,
+    account_url: string,
+    account_type: "user",
+    oauth_id: null,
+    name: string,
+    score: number,
+    bracket_id: null,
+    bracket_name: null
+}
 
 export async function fetchAndUpdateScoreboard(resetDiffs: boolean = false) {
     console.log('[SCORE] Re-fetching eCTF scoreboard');
-    const raw = await (await fetch('https://sb.ectf.mitre.org/game/summary')).text();
 
-    const tables = raw.matchAll(/<tbody class='.*?' id='.*?'>([^]+?)<\/tbody>/g);
-    let isTop = true; // TODO: hacky?
+    const res = await (await fetch('https://ectf.ctfd.io/api/v1/scoreboard', {
+        headers: { 'Authorization': CTFD_API_KEY }
+    })).json() as CtfdResponse;
 
-    lastUpdated = new Date();
-    top5 = [];
+    for (const { pos, name, score, account_url } of res.data) {
+        const absoluteHref = `https://ectf.ctfd.io/${account_url}`;
 
-    for (const [, raw] of tables) {
-        const teams = raw.matchAll(/<tr>\s*<td>(\d+)<\/td>\s*<td class='break-word'>\s*<a href="(.+?)">(\w+)<\/a>\s*<\/td>\s*<td>(\d+)<\/td>\s*<td>(\d+)<\/td>\s*<td>[^]+?<\/td>\s*<\/tr>/g);
-
-        for (const [, rank, href, name, achievements, points] of teams) {
-            const absoluteHref = `https://sb.ectf.mitre.org${href}`;
-
-            scoreboard[name] = {
-                name,
-                rank: Number(rank),
-                href: absoluteHref,
-                achievements: Number(achievements),
-                points: Number(points),
-
-                prevRank: resetDiffs ? Number(rank) : scoreboard[name].prevRank,
-                prevAchievements: resetDiffs ? Number(achievements) : scoreboard[name].prevAchievements,
-                prevPoints: resetDiffs ? Number(points) : scoreboard[name].prevPoints
-            }
-            if (isTop) top5.push(name);
+        scoreboard[name] = {
+            name,
+            rank: pos,
+            href: absoluteHref,
+            points: score,
+            prevRank: resetDiffs ? pos : scoreboard[name].prevRank,
+            prevPoints: resetDiffs ? score : scoreboard[name].prevPoints
         }
 
-        isTop = false;
+        if (pos <= 5) top5[pos - 1] = name;
     }
 }
