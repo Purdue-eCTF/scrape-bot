@@ -6,7 +6,6 @@ import bodyParser from 'body-parser';
 // Modules
 import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
-import { generateScript } from './modules/flags';
 import { app, initGitRepo } from './modules/slack';
 
 // Config
@@ -45,8 +44,6 @@ async function broadcastDiffs(interaction?: CommandInteraction) {
 
         if (team.prevPoints !== team.points)
             diffs.push(`[points: ${team.prevPoints} → ${team.points}]`)
-        if (team.prevAchievements !== team.achievements)
-            diffs.push(`[achievements: ${team.prevAchievements} → ${team.achievements}]`)
 
         if (diffs.length) {
             // Push rank only if other diffs already exist so that one team jumping 15 ranks doesn't cause
@@ -178,7 +175,7 @@ client.on('interactionCreate', async (interaction) => {
         case 'scoreboard':
             const desc = top5
                 .map((name) => scoreboard[name])
-                .map((data) => `${data.rank}. [${data.name}](${data.href}) — ${data.points} points (${data.achievements} achievements)`)
+                .map((data) => `${data.rank}. [${data.name}](${data.href}) — ${data.points} points`)
                 .join('\n')
 
             const scoreboardEmbed = new EmbedBuilder()
@@ -199,26 +196,6 @@ client.on('interactionCreate', async (interaction) => {
         case 'report':
             await broadcastDiffs(interaction);
             return;
-
-        case 'submit':
-            const team = interaction.options.get('team')?.value;
-            if (typeof team !== 'string') return;
-
-            const flag = interaction.options.get('flag')?.value;
-            if (typeof flag !== 'string') return;
-
-            const chall = interaction.options.get('challenge')?.value;
-            if (typeof chall !== 'number') return;
-
-            const delay = interaction.options.get('delay')?.value;
-            const script = generateScript(team, flag, chall, delay as number | undefined);
-
-            const scriptEmbed = new EmbedBuilder()
-                .setTitle('Flag submission script')
-                .setDescription(`\`\`\`js\n${script}\`\`\`\nPaste the above script into the console while logged in on \`sb.ectf.mitre.org\` to begin the flag submission process. To change any values while the script is running, edit them directly i.e\`\`\`js\nTEAM = 'UIUC'\`\`\``)
-                .setColor('#C61130')
-                .setTimestamp();
-            return void interaction.reply({ embeds: [scriptEmbed] });
     }
 });
 
