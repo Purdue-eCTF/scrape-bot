@@ -48,8 +48,8 @@ export async function fetchAndUpdateScoreboard(resetDiffs: boolean = false) {
             rank: pos,
             href: absoluteHref,
             points: score,
-            prevRank: resetDiffs ? pos : scoreboard[name].prevRank,
-            prevPoints: resetDiffs ? score : scoreboard[name].prevPoints
+            prevRank: resetDiffs ? pos : (scoreboard[name]?.prevRank ?? pos),
+            prevPoints: resetDiffs ? score : (scoreboard[name]?.prevPoints ?? 0)
         }
 
         if (pos <= 5) top5[pos - 1] = name;
