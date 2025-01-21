@@ -123,6 +123,7 @@ build status alerting during the dev phase.
 
 Make sure the build server is configured to send POST requests to this bot's exposed express endpoint properly.
 
+<!--
 ### Flag submission userscript
 > `/modules/flags.ts`
 
@@ -132,3 +133,4 @@ submission page and submit a flag as soon as possible.
 <p align="center">
     <img width="700" src="https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/a86818d0-9031-438f-86ff-02bfde9bb216">
 </p>
+-->
