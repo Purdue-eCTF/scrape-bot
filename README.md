@@ -3,6 +3,35 @@ Scrapes the eCTF scoreboard for rank changes.
 
 https://discord.com/oauth2/authorize?client_id=1199441161077674105&scope=bot+applications.commands&permissions=8
 
+```mermaid
+graph TD;
+    R(Design repo)-->|Push|CI(GitHub CI);
+    CI-->|Commit hash|BS(Build dev image);
+
+    subgraph bs [Build server];
+    BS-->|Dev image|D(Queue / distribute image)
+    end
+    
+    S(Slack targets channel)-->|Zipped design|SD(Slack autodownload);
+    ES(eCTF scoreboard)-->SR(Scoreboard alerts);
+
+    subgraph sb [Scrape bot];
+    DBS(Build / attack status);
+    SD;
+    SR;
+    end
+
+    SD-->TR(Targets repo);
+    SD-->|Target image|D;
+    DBS-->DS(Discord alerting);
+    SD-->DS;
+    SR-->DS;
+
+    D-->S1(Attack server 1);
+    D-->S2(Attack server 2);
+    D-->S3(Attack server ...);
+```
+
 ### Running locally
 Create a file called `auth.ts` that exports your Discord token, Slack bot info, express / bolt.js server ports, and channel / message IDs:
 ```ts
