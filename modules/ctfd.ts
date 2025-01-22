@@ -88,6 +88,14 @@ async function getAuthedSessionNonce() {
     };
 }
 
+type FlagSubmissionResponse = {
+    success: true,
+    data: {
+        status: "incorrect", // TODO
+        message: "Incorrect"
+    }
+}
+
 export async function submitFlag(id: number, flag: string) {
     const { session, nonce } = await getAuthedSessionNonce();
 
@@ -99,5 +107,5 @@ export async function submitFlag(id: number, flag: string) {
             cookie: session,
         },
         body: JSON.stringify({ challenge_id: id, submission: flag }),
-    })).json();
+    })).json() as FlagSubmissionResponse;
 }

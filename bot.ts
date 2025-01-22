@@ -218,9 +218,11 @@ client.on('interactionCreate', async (interaction) => {
             const flag = interaction.options.getString('flag', true);
 
             const res = await submitFlag(id, flag);
+            const challName = challenges.find((c) => c.id === id)!.name;
 
             const submitEmbed = new EmbedBuilder()
-                .setDescription(`\`\`\`${JSON.stringify(res)}\`\`\``)
+                .setTitle(`Flag submission for \`${challName}\``)
+                .setDescription(`**Flag:** \`${flag}\`\n**Status:** ${res.data.status}\n**Message:** ${res.data.message}`)
                 .setColor('#C61130')
                 .setTimestamp();
             return void interaction.reply({ embeds: [submitEmbed] });
