@@ -1,4 +1,4 @@
-import { CTFD_API_KEY } from '../auth';
+import { getScoreboard } from './ctfd';
 
 
 type TeamData = {
@@ -14,30 +14,10 @@ export const scoreboard: { [name: string]: TeamData } = {};
 export let lastUpdated: Date;
 export let top5: string[] = [];
 
-type CtfdResponse = {
-    success: true,
-    data: CtfdScoreboardData[],
-}
-
-type CtfdScoreboardData = {
-    pos: number,
-    account_id: number,
-    account_url: string,
-    account_type: "user",
-    oauth_id: null,
-    name: string,
-    score: number,
-    bracket_id: null,
-    bracket_name: null
-}
-
 export async function fetchAndUpdateScoreboard(resetDiffs: boolean = false) {
     console.log('[SCORE] Re-fetching eCTF scoreboard');
 
-    const res = await (await fetch('https://ectf.ctfd.io/api/v1/scoreboard', {
-        headers: { 'Authorization': CTFD_API_KEY }
-    })).json() as CtfdResponse;
-
+    const res = await getScoreboard();
     lastUpdated = new Date();
 
     for (const { pos, name, score, account_url } of res.data) {

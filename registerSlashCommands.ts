@@ -16,6 +16,10 @@ const globalCommands = [
     new SlashCommandBuilder()
         .setName('report')
         .setDescription('Sends the current day\'s eCTF scoreboard report.')
+        .toJSON(),
+    new SlashCommandBuilder()
+        .setName('challenges')
+        .setDescription('Gets the top 10 remaining challenges sorted by solves and points.')
         .toJSON()
 ];
 

@@ -23,8 +23,8 @@ graph TD;
 
     SD-->TR(Targets repo);
     SD-->|Target image|D;
-    DBS-->DS(Discord alerting);
-    SD-->DS;
+    SD-->DS(Discord alerting);
+    DBS-->DS;
     SR-->DS;
 
     D-->S1(Attack server 1);
@@ -53,6 +53,10 @@ export const TARGETS_REPO_URL = 'https://username:token@github.com/Purdue-eCTF-2
 
 export const EXPRESS_PORT = 8080;
 export const BOLT_PORT = 8081;
+
+export const CTFD_EMAIL = '...';
+export const CTFD_PASSWORD = '...';
+export const CTFD_API_KEY = '...';
 ```
 - `DISCORD_TOKEN` — the discord bot auth token.
 - `SCOREBOARD_NOTIFY_CHANNEL_ID` — the discord channel to send scoreboard reports in.

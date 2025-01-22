@@ -7,6 +7,7 @@ import bodyParser from 'body-parser';
 import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
 import { app, initGitRepo } from './modules/slack';
+import { getChallenges } from './modules/ctfd';
 
 // Config
 import {
@@ -173,14 +174,14 @@ client.on('interactionCreate', async (interaction) => {
 
     switch (interaction.commandName) {
         case 'scoreboard':
-            const desc = top5
+            const scoreboardDesc = top5
                 .map((name) => scoreboard[name])
                 .map((data) => `${data.rank}. [${data.name}](${data.href}) — ${data.points} points`)
                 .join('\n')
 
             const scoreboardEmbed = new EmbedBuilder()
                 .setTitle('eCTF scoreboard')
-                .setDescription(desc)
+                .setDescription(scoreboardDesc)
                 .setColor('#C61130')
                 .setFooter({ text: `Last fetched ${lastUpdated.toLocaleString()}` })
                 .setTimestamp();
@@ -196,6 +197,23 @@ client.on('interactionCreate', async (interaction) => {
         case 'report':
             await broadcastDiffs(interaction);
             return;
+
+        case 'challenges':
+            const res = await getChallenges();
+            const remaining = res.data.filter((c) => !c.solved_by_me);
+
+            const challengesDesc = remaining
+                .toSorted((a, b) => (b.solves - a.solves) || (b.value - a.value))
+                .slice(0, 10)
+                .map((c, i) => `${i + 1}. **${c.name}** (${c.value} pts): solved by ${c.solves}`)
+                .join('\n');
+
+            const challengesEmbed = new EmbedBuilder()
+                .setTitle('eCTF challenges')
+                .setDescription(`Top 10 remaining challenges by solves and points:\n${challengesDesc}`)
+                .setColor('#C61130')
+                .setTimestamp();
+            return void interaction.reply({ embeds: [challengesEmbed] });
     }
 });
 
