@@ -8,6 +8,7 @@ import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor 
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
 import { fetchAndUpdateChallenges, challenges } from './modules/challenges';
 import { app, initGitRepo } from './modules/slack';
+import { submitFlag } from './modules/ctfd';
 
 // Config
 import {
@@ -211,6 +212,18 @@ client.on('interactionCreate', async (interaction) => {
                 .setColor('#C61130')
                 .setTimestamp();
             return void interaction.reply({ embeds: [challengesEmbed] });
+
+        case 'submit':
+            const id = interaction.options.getInteger('challenge', true);
+            const flag = interaction.options.getString('flag', true);
+
+            const res = await submitFlag(id, flag);
+
+            const submitEmbed = new EmbedBuilder()
+                .setDescription(`\`\`\`${JSON.stringify(res)}\`\`\``)
+                .setColor('#C61130')
+                .setTimestamp();
+            return void interaction.reply({ embeds: [submitEmbed] });
     }
 });
 

@@ -27,7 +27,12 @@ const globalCommands = [
         .addIntegerOption((option) => option
             .setName('challenge')
             .setDescription('The challenge to submit a flag for.')
-            .setAutocomplete(true))
+            .setAutocomplete(true)
+            .setRequired(true))
+        .addStringOption((option) => option
+            .setName('flag')
+            .setDescription('The flag to submit.')
+            .setRequired(true))
 ];
 
 const clientId = '1199441161077674105';

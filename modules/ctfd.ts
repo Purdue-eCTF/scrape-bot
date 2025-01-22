@@ -77,13 +77,14 @@ async function getAuthedSessionNonce() {
         body: formData,
     });
 
+    const authedSession = parseSetCookie(loginRes.headers.getSetCookie()[0]);
     const authedRaw = await (await fetch('https://ectf.ctfd.io/challenges', {
-        headers: { cookie: session }
+        headers: { cookie: authedSession }
     })).text();
 
     return {
         nonce: extractNonce(authedRaw),
-        session: parseSetCookie(loginRes.headers.getSetCookie()[0])
+        session: authedSession
     };
 }
 
