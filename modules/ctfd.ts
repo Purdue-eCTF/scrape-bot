@@ -46,7 +46,7 @@ export async function getChallenges() {
     const { session } = await getAuthedSessionNonce();
 
     return await (await fetch("https://ectf.ctfd.io/api/v1/challenges", {
-        headers: { 'Cookie': session }
+        headers: { cookie: session }
     })).json() as ChallengesResponse;
 }
 
@@ -60,7 +60,6 @@ function parseSetCookie(c: string) {
 
 async function getAuthedSessionNonce() {
     const res = await fetch('https://ectf.ctfd.io/login');
-    console.log(res.headers.getSetCookie());
 
     const session = parseSetCookie(res.headers.getSetCookie()[0]);
     const nonce = extractNonce(await res.text());

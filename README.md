@@ -77,13 +77,17 @@ in the first place; leave this field blank at first, then force-send a status me
 - `EXPRESS_PORT` — the port to run the build-integration express server on.
 - `BOLT_PORT` — the port to run the Slack bot on.
 
+- `CTFD_EMAIL` — the email of the team on CTFd.
+- `CTFD_PASSWORD` — the password of the team on CTFd.
+- `CTFD_API_KEY` — the CTFd access token.
+
 See the **Slack autodownload** section for more on how to configure the required Slack secrets.
 
 Then, install dependencies with `npm install` and run `npm start` to start the bot.
 
 To run with docker,
 ```bash
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ### Slack autodownload
@@ -109,17 +113,27 @@ Note that your server should be running at this point to respond to Slack's `cha
 ### Scoreboard
 > `/modules/scoreboard.ts`
 
-This bot periodically scrapes the eCTF scoreboard for updates, sending a report of changes each day. Alternatively, run
+> `/modules/ctfd.ts`
+
+This bot periodically fetches the eCTF scoreboard for updates, sending a report of changes each day. Alternatively, run
 `/report` to get a report of the day so far.
 
 <p align="center">
     <img width="400" src="https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/d7c1ad2a-a4fb-428e-a284-9faf25c8a48a"> <img width="400" src="https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/2a2509c3-9295-43f4-bbad-406dad166d6b">
 </p>
 
+To facilitate this, the bot will need a CTFd access token generated on the account settings page (https://ectf.ctfd.io/settings).
+
+Note that for certain privileged actions (like determining solved challenges and submitting flags), an access token is
+not enough and an authed session cookie is required instead.
+
+Scrape bot will handle the session management automatically; however, it will need the login credentials of the team
+account to do so.
+
 ### Build server
 > `/modules/status.ts`
 
-This bot also integrates with the `nix-shell` [build server](https://github.com/Purdue-eCTF-2024/build-server) for automated
+This bot also integrates with the [build server](https://github.com/Purdue-eCTF/2025-eCTF-build-server) for automated
 build status alerting during the dev phase.
 
 <img width="450" src="https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/3bf83b07-fc5e-4dc1-8a82-835da687e165">
