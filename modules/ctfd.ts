@@ -29,7 +29,7 @@ type ChallengesResponse = {
     data: ChallengeData[]
 }
 
-type ChallengeData = {
+export type ChallengeData = {
     id: number,
     type: 'standard',
     name: string,
@@ -77,8 +77,26 @@ async function getAuthedSessionNonce() {
         body: formData,
     });
 
+    const authedRaw = await (await fetch('https://ectf.ctfd.io/challenges', {
+        headers: { cookie: session }
+    })).text();
+
     return {
-        // nonce: extractNonce(await loginRes.text()),
+        nonce: extractNonce(authedRaw),
         session: parseSetCookie(loginRes.headers.getSetCookie()[0])
     };
+}
+
+export async function submitFlag(id: number, flag: string) {
+    const { session, nonce } = await getAuthedSessionNonce();
+
+    return await (await fetch('https://ectf.ctfd.io/api/v1/challenges/attempt', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Csrf-Token': nonce,
+            cookie: session,
+        },
+        body: JSON.stringify({ challenge_id: id, submission: flag }),
+    })).json();
 }

@@ -20,7 +20,14 @@ const globalCommands = [
     new SlashCommandBuilder()
         .setName('challenges')
         .setDescription('Gets the top 10 remaining challenges sorted by solves and points.')
-        .toJSON()
+        .toJSON(),
+    new SlashCommandBuilder()
+        .setName('submit')
+        .setDescription('Automatically submits the given flag to the given challenge on CTFd.')
+        .addIntegerOption((option) => option
+            .setName('challenge')
+            .setDescription('The challenge to submit a flag for.')
+            .setAutocomplete(true))
 ];
 
 const clientId = '1199441161077674105';

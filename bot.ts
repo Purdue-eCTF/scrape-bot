@@ -6,8 +6,8 @@ import bodyParser from 'body-parser';
 // Modules
 import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
+import { fetchAndUpdateChallenges, challenges } from './modules/challenges';
 import { app, initGitRepo } from './modules/slack';
-import { getChallenges } from './modules/ctfd';
 
 // Config
 import {
@@ -123,7 +123,6 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/${req.update.state.commit.runId}`;
 
         const failureChannel = client.channels.cache.get(FAILURE_CHANNEL_ID);
-
         const failureEmbed = new EmbedBuilder()
             .setTitle(`${req.update.type === 'BUILD' ? 'Build' : 'Tests'} failed for commit`)
             .setColor(0xb50300)
@@ -199,10 +198,8 @@ client.on('interactionCreate', async (interaction) => {
             return;
 
         case 'challenges':
-            const res = await getChallenges();
-            const remaining = res.data.filter((c) => !c.solved_by_me);
-
-            const challengesDesc = remaining
+            const challengesDesc = challenges
+                .filter((c) => !c.solved_by_me)
                 .toSorted((a, b) => (b.solves - a.solves) || (b.value - a.value))
                 .slice(0, 10)
                 .map((c, i) => `${i + 1}. **${c.name}** (${c.value} pts): solved by ${c.solves}`)
@@ -217,10 +214,24 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
+client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isAutocomplete()) return;
+
+    const input = interaction.options.getFocused();
+    const res = challenges
+        .filter(((c) => !c.solved_by_me && c.name.toLowerCase().startsWith(input.toLowerCase())))
+        .map((c) => ({ name: c.name, value: c.id }))
+
+    await interaction.respond(res);
+});
+
 // void initGitRepo();
 
 void fetchAndUpdateScoreboard(true);
 setInterval(fetchAndUpdateScoreboard, 1000 * 60);
+
+void fetchAndUpdateChallenges();
+setInterval(fetchAndUpdateChallenges, 1000 * 60);
 
 void client.login(DISCORD_TOKEN);
 void app.start(BOLT_PORT);
