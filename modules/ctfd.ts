@@ -1,6 +1,11 @@
 import { CTFD_API_KEY, CTFD_EMAIL, CTFD_PASSWORD } from '../auth';
 
 
+let cachedSession: string | null = null;
+let cachedNonce: string | null = null;
+let sessionExpiry = new Date();
+
+
 type ScoreboardResponse = {
     success: true,
     data: ScoreboardData[],
@@ -54,14 +59,14 @@ function extractNonce(raw: string) {
     return raw.match(/'csrfNonce': "(.+?)"/)![1];
 }
 
-function parseSetCookie(c: string) {
-    return c.split(';')[0];
-}
+export async function getAuthedSessionNonce() {
+    // If we have a cached, non-expired session, use it
+    if (new Date() < sessionExpiry && cachedSession && cachedNonce)
+        return { session: cachedSession, nonce: cachedNonce };
 
-async function getAuthedSessionNonce() {
     const res = await fetch('https://ectf.ctfd.io/login');
 
-    const session = parseSetCookie(res.headers.getSetCookie()[0]);
+    const [session] = res.headers.getSetCookie()[0].split('; ');
     const nonce = extractNonce(await res.text());
 
     const formData = new FormData();
@@ -77,14 +82,19 @@ async function getAuthedSessionNonce() {
         body: formData,
     });
 
-    const authedSession = parseSetCookie(loginRes.headers.getSetCookie()[0]);
+    const [authedSession, expiresGmt] = loginRes.headers.getSetCookie()[0].split('; ');
     const authedRaw = await (await fetch('https://ectf.ctfd.io/challenges', {
         headers: { cookie: authedSession }
     })).text();
 
+    // Cache session data and expiry date
+    cachedSession = authedSession;
+    cachedNonce = extractNonce(authedRaw);
+    sessionExpiry = new Date(expiresGmt.slice(8));
+
     return {
-        nonce: extractNonce(authedRaw),
-        session: authedSession
+        nonce: cachedNonce,
+        session: cachedSession,
     };
 }
 
