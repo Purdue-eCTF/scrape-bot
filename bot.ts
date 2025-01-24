@@ -121,7 +121,7 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         (req.update.type === 'BUILD' || req.update.type === 'TEST')
         && req.update.state.result === 'FAILED'
     ) {
-        const runHref = `https://github.com/Purdue-eCTF-2024/2024-ectf-secure-example/actions/runs/${req.update.state.commit.runId}`;
+        const runHref = `https://github.com/Purdue-eCTF/2025-eCTF-design/actions/runs/${req.update.state.commit.runId}`;
 
         const failureChannel = client.channels.cache.get(FAILURE_CHANNEL_ID);
         const failureEmbed = new EmbedBuilder()
