@@ -142,6 +142,7 @@ const server = express();
 
 server.use(bodyParser.json());
 server.post('/', async (req, res) => {
+    console.log(`[BUILD] Received webhook push:\n${JSON.stringify(req.body)}`);
     try {
         await updateBuildStatus(req.body);
         res.status(200).json({ ok: true });
