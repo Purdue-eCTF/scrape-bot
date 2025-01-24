@@ -101,13 +101,13 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         ? formatCommitShort(req.build.active)
         : '*No commits loaded.*'
 
-    const color = req.build.active
-        ? statusToColor(req.build.active.result)
+    const color = req.status
+        ? statusToColor(req.status)
         : '#27272a'
 
     const statusEmbed = new EmbedBuilder()
         .setTitle('Secure design build status')
-        .setDescription(`**Status:** ${req.build.active?.result || 'N/A'}`)
+        .setDescription(`**Status:** ${req.status || 'N/A'}`)
         .addFields(
             { name: 'Pis', value: piStatus },
             { name: 'Building:', value: buildStatus },

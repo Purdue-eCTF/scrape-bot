@@ -1,5 +1,7 @@
+type ActionStatus = 'SUCCESS' | 'TESTING' | 'BUILDING' | 'PENDING' | 'FAILED';
+
 type ActionResult = {
-    result: 'SUCCESS' | 'TESTING' | 'BUILDING' | 'PENDING' | 'FAILED',
+    result: ActionStatus,
     commit: {
         hash: string,
         name: string,
@@ -14,6 +16,7 @@ type PiStatus = {
     active?: ActionResult
 }
 export type BuildStatusUpdateReq = {
+    status?: ActionStatus,
     update: QueueUpdate | BuildUpdate | TestUpdate
     build: {
         active?: ActionResult
