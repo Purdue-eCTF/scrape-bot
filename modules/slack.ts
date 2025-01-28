@@ -5,12 +5,12 @@ import { notifyTargetPush } from '../bot';
 import { ATTACK_CHANNEL_ID, SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
 
 
-export const app = new App({
+export const slack = new App({
     token: SLACK_TOKEN,
     signingSecret: SLACK_SIGNING_SECRET
 });
 
-app.message(async ({ message }) => {
+slack.message(async ({ message }) => {
     console.log('[SLACK]', message);
 
     if (message.type !== 'message') return;

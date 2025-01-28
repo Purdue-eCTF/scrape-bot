@@ -1,4 +1,4 @@
-import { getScoreboard } from './ctfd';
+import { ctfdClient } from './challenges';
 
 
 type TeamData = {
@@ -17,10 +17,10 @@ export let top5: string[] = [];
 export async function fetchAndUpdateScoreboard(resetDiffs: boolean = false) {
     console.log('[SCORE] Re-fetching eCTF scoreboard');
 
-    const res = await getScoreboard();
+    const entries = await ctfdClient.getScoreboard();
     lastUpdated = new Date();
 
-    for (const { pos, name, score, account_url } of res.data) {
+    for (const { pos, name, score, account_url } of entries) {
         const absoluteHref = `https://ectf.ctfd.io/${account_url}`;
 
         scoreboard[name] = {

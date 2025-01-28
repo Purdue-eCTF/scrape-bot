@@ -6,9 +6,8 @@ import bodyParser from 'body-parser';
 // Modules
 import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
-import { fetchAndUpdateChallenges, challenges } from './modules/challenges';
-import { app, initGitRepo } from './modules/slack';
-import { submitFlag } from './modules/ctfd';
+import { fetchAndUpdateChallenges, challenges, ctfdClient } from './modules/challenges';
+import { slack, initGitRepo } from './modules/slack';
 
 // Config
 import {
@@ -218,12 +217,12 @@ client.on('interactionCreate', async (interaction) => {
             const id = interaction.options.getInteger('challenge', true);
             const flag = interaction.options.getString('flag', true);
 
-            const res = await submitFlag(id, flag);
+            const res = await ctfdClient.submitFlag(id, flag);
             const challName = challenges.find((c) => c.id === id)!.name;
 
             const submitEmbed = new EmbedBuilder()
                 .setTitle(`Flag submission for \`${challName}\``)
-                .setDescription(`**Flag:** \`${flag}\`\n**Status:** ${res.data.status}\n**Message:** ${res.data.message}`)
+                .setDescription(`**Flag:** \`${flag}\`\n**Status:** ${res.status}\n**Message:** ${res.message}`)
                 .setColor('#C61130')
                 .setTimestamp();
             return void interaction.reply({ embeds: [submitEmbed] });
@@ -250,4 +249,4 @@ void fetchAndUpdateChallenges();
 setInterval(fetchAndUpdateChallenges, 1000 * 60);
 
 void client.login(DISCORD_TOKEN);
-void app.start(BOLT_PORT);
+void slack.start(BOLT_PORT);

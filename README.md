@@ -113,7 +113,7 @@ Note that your server should be running at this point to respond to Slack's `cha
 ### Scoreboard
 > `/modules/scoreboard.ts`
 
-> `/modules/ctfd.ts`
+> `/modules/challenges.ts`
 
 This bot periodically fetches the eCTF scoreboard for updates, sending a report of changes each day. Alternatively, run
 `/report` to get a report of the day so far.
