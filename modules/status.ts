@@ -1,3 +1,6 @@
+import { DESIGN_REPO_URL } from '../config';
+
+
 type ActionStatus = 'SUCCESS' | 'TESTING' | 'BUILDING' | 'PENDING' | 'FAILED';
 
 type ActionResult = {
@@ -52,7 +55,7 @@ export function formatPiStatus(s: PiStatus) {
 }
 
 export function formatCommitShort(c: ActionResult) {
-    const runHref = `https://github.com/Purdue-eCTF/2025-eCTF-design/actions/runs/${c.commit.runId}`;
+    const runHref = `${DESIGN_REPO_URL}/actions/runs/${c.commit.runId}`;
     const ts = Math.floor(c.actionStart);
 
     return `\\${statusToCircle(c.result)} [[\`${c.commit.hash.slice(0, 7)}\`]](${runHref}): ${c.commit.name} (@${c.commit.author}) updated <t:${ts}:R>`;

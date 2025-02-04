@@ -2,7 +2,10 @@ import { App } from '@slack/bolt';
 import AdmZip from 'adm-zip';
 import { execSync } from 'node:child_process';
 import { notifyTargetPush } from '../bot';
-import { ATTACK_CHANNEL_ID, SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
+
+// Config
+import { SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
+import { SLACK_TARGET_CHANNEL_ID } from '../config';
 
 
 export const slack = new App({
@@ -18,7 +21,7 @@ slack.message(async ({ message }) => {
 
     // Download zip files from the attack files channel, automatically unzipping and committing
     // them to the targets repository.
-    if (message.channel !== ATTACK_CHANNEL_ID) return;
+    if (message.channel !== SLACK_TARGET_CHANNEL_ID) return;
     if (!message.files) return;
 
     const messages: string[] = [];

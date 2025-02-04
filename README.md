@@ -37,49 +37,37 @@ Create a file called `auth.ts` that exports your Discord token, Slack bot info, 
 ```ts
 // auth.ts
 export const DISCORD_TOKEN = 'very-real-discord-token';
-export const SCOREBOARD_NOTIFY_CHANNEL_ID = '...';
-
-export const STATUS_CHANNEL_ID = '...';
-export const STATUS_MESSAGE_ID = '...';
-export const FAILURE_CHANNEL_ID = '...';
 
 export const SLACK_TOKEN = 'xoxp-very-real-slack-token';
 export const SLACK_SIGNING_SECRET = '...';
 
-export const ATTACK_CHANNEL_ID = 'C06D0SZDF5K';
-export const ATTACK_NOTIFY_CHANNEL_ID = '...';
-
 export const TARGETS_REPO_URL = 'https://username:token@github.com/Purdue-eCTF-2024/2024-Targets';
-
-export const EXPRESS_PORT = 8080;
-export const BOLT_PORT = 8081;
 
 export const CTFD_EMAIL = '...';
 export const CTFD_PASSWORD = '...';
-export const CTFD_API_KEY = '...';
 ```
 - `DISCORD_TOKEN` — the discord bot auth token.
-- `SCOREBOARD_NOTIFY_CHANNEL_ID` — the discord channel to send scoreboard reports in.
-
-- `STATUS_CHANNEL_ID` — the discord channel to send build status updates in.
-- `STATUS_MESSAGE_ID` — the message to update when the status of a build changes. The ID of this message can't really be obtained until a build status message is sent
-in the first place; leave this field blank at first, then force-send a status message and update the ID accordingly.
-- `FAILURE_CHANNEL_ID` — the discord channel to send "build failed" notifications in.
 
 - `SLACK_TOKEN` — the Slack auth token.
 - `SLACK_SIGNING_SECRET` — the Slack signing secret.
 
-- `ATTACK_CHANNEL_ID` — the Slack channel to listen for target drops in.
-- `ATTACK_NOTIFY_CHANNEL_ID` — the Discord channel to send "new target dropped" notifications in.
-
 - `TARGETS_REPO_URL` — the GitHub URL to the targets repository to push new targets to. **If this is a private repository, make sure to include credentials with push access.**
-
-- `EXPRESS_PORT` — the port to run the build-integration express server on.
-- `BOLT_PORT` — the port to run the Slack bot on.
 
 - `CTFD_EMAIL` — the email of the team on CTFd.
 - `CTFD_PASSWORD` — the password of the team on CTFd.
-- `CTFD_API_KEY` — the CTFd access token.
+
+Other configuration options are found in `config.ts`:
+- `SCOREBOARD_NOTIFY_CHANNEL_ID` — the discord channel to send scoreboard reports in.
+- `STATUS_CHANNEL_ID` — the discord channel to send build status updates in.
+- `STATUS_MESSAGE_ID` — the message to update when the status of a build changes. The ID of this message can't really be obtained until a build status message is sent
+  in the first place; leave this field blank at first, then force-send a status message and update the ID accordingly.
+- `FAILURE_CHANNEL_ID` — the discord channel to send "build failed" notifications in.
+- `ATTACK_NOTIFY_CHANNEL_ID` — the Discord channel to send "new target dropped" notifications in.
+
+- `SLACK_TARGET_CHANNEL_ID` — the Slack channel to listen for target drops in.
+
+- `EXPRESS_PORT` — the port to run the build-integration express server on.
+- `BOLT_PORT` — the port to run the Slack bot on.
 
 See the **Slack autodownload** section for more on how to configure the required Slack secrets.
 

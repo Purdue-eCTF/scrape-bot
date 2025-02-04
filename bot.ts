@@ -10,16 +10,17 @@ import { fetchAndUpdateChallenges, challenges, ctfdClient } from './modules/chal
 import { slack, initGitRepo } from './modules/slack';
 
 // Config
+import { DISCORD_TOKEN } from './auth';
 import {
+    BOLT_PORT,
+    DESIGN_REPO_URL,
+    EXPRESS_PORT,
     FAILURE_CHANNEL_ID,
     SCOREBOARD_NOTIFY_CHANNEL_ID,
-    EXPRESS_PORT,
+    ATTACK_NOTIFY_CHANNEL_ID,
     STATUS_CHANNEL_ID,
-    STATUS_MESSAGE_ID,
-    DISCORD_TOKEN,
-    BOLT_PORT,
-    ATTACK_NOTIFY_CHANNEL_ID
-} from './auth';
+    STATUS_MESSAGE_ID
+} from './config';
 
 
 const client = new Client({
@@ -120,7 +121,7 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         (req.update.type === 'BUILD' || req.update.type === 'TEST')
         && req.update.state.result === 'FAILED'
     ) {
-        const runHref = `https://github.com/Purdue-eCTF/2025-eCTF-design/actions/runs/${req.update.state.commit.runId}`;
+        const runHref = `${DESIGN_REPO_URL}/actions/runs/${req.update.state.commit.runId}`;
 
         const failureChannel = client.channels.cache.get(FAILURE_CHANNEL_ID);
         const failureEmbed = new EmbedBuilder()
