@@ -7,7 +7,7 @@ import bodyParser from 'body-parser';
 import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
 import { fetchAndUpdateChallenges, challenges, ctfdClient } from './modules/challenges';
-import { slack, initGitRepo } from './modules/slack';
+import { slack, initTargetsRepo } from './modules/slack';
 
 // Config
 import { DISCORD_TOKEN } from './auth';
@@ -241,7 +241,7 @@ client.on('interactionCreate', async (interaction) => {
     await interaction.respond(res);
 });
 
-// void initGitRepo();
+void initTargetsRepo();
 
 void fetchAndUpdateScoreboard(true);
 setInterval(fetchAndUpdateScoreboard, 1000 * 60);

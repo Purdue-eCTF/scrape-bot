@@ -19,13 +19,13 @@
     "@b01lers/ctfd-api": "^1.2.0",
     "@discordjs/builders": "^1.7.0",
     "@discordjs/rest": "^2.2.0",
-    "@slack/bolt": "^3.17.1",
+    "@slack/bolt": "^4.2.0",
     "adm-zip": "^0.5.12",
     "body-parser": "^1.20.2",
     "cron": "^3.1.6",
     "discord-api-types": "^0.37.67",
     "discord.js": "^14.14.1",
-    "express": "^4.18.2",
+    "express": "^4.21.2",
     "isomorphic-git": "^1.25.6",
     "ts-node": "^10.9.2"
   }
