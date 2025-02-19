@@ -48,6 +48,6 @@ slack.message(async ({ message }) => {
 
 export async function initTargetsRepo() {
     console.log('[GIT] Initializing targets repository');
-    execSync(`git clone ${TARGETS_REPO_URL} temp || (cd temp && git reset origin --hard)`);
+    execSync(`git clone ${TARGETS_REPO_URL} temp || (cd temp && git fetch && git reset --hard origin/main)`);
     console.log(execSync('cd temp && git status').toString());
 }
