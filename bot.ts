@@ -201,7 +201,7 @@ client.on('interactionCreate', async (interaction) => {
 
         case 'challenges':
             const challengesDesc = challenges
-                .filter((c) => !c.solved_by_me)
+                .filter((c) => !c.solved_by_me && !c.name.endsWith(' - Late'))
                 .toSorted((a, b) => (b.solves - a.solves) || (b.value - a.value))
                 .slice(0, 10)
                 .map((c, i) => `${i + 1}. **${c.name}** (${c.value} pts): solved by ${c.solves}`)
