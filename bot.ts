@@ -72,10 +72,10 @@ async function broadcastDiffs(interaction?: CommandInteraction) {
     await channel.send({ embeds: [diffEmbed] });
 }
 
-export async function notifyTargetPush(message: string) {
+export async function notifyTargetPush(name: string, ip: string, portLow: string, portHigh: string) {
     const pushEmbed = new EmbedBuilder()
         .setTitle('New target pushed to targets repository')
-        .setDescription(message)
+        .setDescription(`**${name}** (\`${name}_package.zip\`):\n- IP: ${ip}\n- Ports: ${portLow}-${portHigh}`)
         .setColor('#C61130')
         .setTimestamp();
 

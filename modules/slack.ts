@@ -30,6 +30,9 @@ slack.message(async ({ message }) => {
     const name = file.name!.slice(0, -12);
     console.log('[SLACK] Found', file.name);
 
+    // Parse ip, ports from message content
+    const [, ip, portLow, portHigh] = message.text.match(/IP:\s+(.+?)\n.*?Ports:\s+(\d+)-(\d+)/)!;
+
     // In parallel: fetch raw file from Slack API and prepare repo for extraction
     const [, buf] = await Promise.all([
         execAsync('cd temp && git fetch && git reset --hard origin/main'),
@@ -46,7 +49,7 @@ slack.message(async ({ message }) => {
 
     await execAsync(`cd temp && git add . && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
 
-    await notifyTargetPush(`- ${name} (\`${name}_package.zip\`)`);
+    await notifyTargetPush(name, ip, portLow, portHigh);
 });
 
 function execAsync(cmd: string): Promise<string> {
