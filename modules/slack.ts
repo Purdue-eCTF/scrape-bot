@@ -1,6 +1,6 @@
 import { App } from '@slack/bolt';
 import AdmZip from 'adm-zip';
-import { execSync } from 'node:child_process';
+import { exec } from 'node:child_process';
 import { notifyTargetPush } from '../bot';
 
 // Config
@@ -22,32 +22,44 @@ slack.message(async ({ message }) => {
     // Download zip files from the attack files channel, automatically unzipping and committing
     // them to the targets repository.
     if (message.channel !== SLACK_TARGET_CHANNEL_ID) return;
-    if (!message.files) return;
 
-    const messages: string[] = [];
+    const file = message.files?.find((f) => f.filetype === 'zip');
+    if (!file) return;
 
-    for (const file of message.files.filter((f) => f.filetype === 'zip')) {
-        console.log('[SLACK] Found', file.name);
+    // Slice off `_package.zip`
+    const name = file.name!.slice(0, -12);
+    console.log('[SLACK] Found', file.name);
 
-        const buf = await (await fetch(file.url_private_download!, {
+    // In parallel: fetch raw file from Slack API and prepare repo for extraction
+    const [, buf] = await Promise.all([
+        execAsync('cd temp && git fetch && git reset --hard origin/main'),
+        fetch(file.url_private_download!, {
             headers: { 'Authorization': `Bearer ${SLACK_TOKEN}` }
-        })).arrayBuffer();
+        }).then((r) => r.arrayBuffer())
+    ])
 
-        const name = file.name!.slice(0, -4);
+    const zip = new AdmZip(Buffer.from(buf));
+    zip.extractAllTo(`./temp/${name}`);
+    console.log('[SLACK] Extracted', file.name);
 
-        const zip = new AdmZip(Buffer.from(buf));
-        zip.extractEntryTo(`${name}/`, `./temp`, true, true); // TODO: spotty?
-        console.log('[SLACK] Extracted', file.name);
+    // TODO: automated attack tests
 
-        execSync(`cd temp && git add . && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${file.name}" && git push`);
-        messages.push(`- ${name} (\`${name}.zip\`)`);
-    }
+    await execAsync(`cd temp && git add . && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
 
-    await notifyTargetPush(messages);
+    await notifyTargetPush(`- ${name} (\`${name}_package.zip\`)`);
 });
+
+function execAsync(cmd: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+        exec(cmd, (err, stdout, stderr) => {
+            if (err) return reject(err);
+            return resolve(stdout);
+        });
+    })
+}
 
 export async function initTargetsRepo() {
     console.log('[GIT] Initializing targets repository');
-    execSync(`git clone ${TARGETS_REPO_URL} temp || (cd temp && git fetch && git reset --hard origin/main)`);
-    console.log(execSync('cd temp && git status').toString());
+    await execAsync(`git clone ${TARGETS_REPO_URL} temp || (cd temp && git fetch && git reset --hard origin/main)`);
+    console.log(await execAsync('cd temp && git status'));
 }

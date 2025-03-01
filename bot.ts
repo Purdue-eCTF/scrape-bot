@@ -72,10 +72,10 @@ async function broadcastDiffs(interaction?: CommandInteraction) {
     await channel.send({ embeds: [diffEmbed] });
 }
 
-export async function notifyTargetPush(messages: string[]) {
+export async function notifyTargetPush(message: string) {
     const pushEmbed = new EmbedBuilder()
         .setTitle('New target pushed to targets repository')
-        .setDescription(messages.join('\n'))
+        .setDescription(message)
         .setColor('#C61130')
         .setTimestamp();
 
