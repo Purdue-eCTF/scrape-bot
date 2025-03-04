@@ -1,4 +1,4 @@
-import { ActivityType, Client, CommandInteraction, EmbedBuilder } from 'discord.js';
+import { ActivityType, ChannelType, Client, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { CronJob } from 'cron';
 import express from 'express';
 import bodyParser from 'body-parser';
@@ -6,18 +6,19 @@ import bodyParser from 'body-parser';
 // Modules
 import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
-import { fetchAndUpdateChallenges, challenges, ctfdClient } from './modules/challenges';
-import { slack, initTargetsRepo } from './modules/slack';
+import { challenges, ctfdClient, fetchAndUpdateChallenges } from './modules/challenges';
+import { initTargetsRepo, slack } from './modules/slack';
 
 // Config
 import { DISCORD_TOKEN } from './auth';
 import {
+    ATTACK_FORUM_CHANNEL_ID,
+    ATTACK_NOTIFY_CHANNEL_ID,
     BOLT_PORT,
     DESIGN_REPO_URL,
     EXPRESS_PORT,
     FAILURE_CHANNEL_ID,
     SCOREBOARD_NOTIFY_CHANNEL_ID,
-    ATTACK_NOTIFY_CHANNEL_ID,
     STATUS_CHANNEL_ID,
     STATUS_MESSAGE_ID
 } from './config';
@@ -73,9 +74,23 @@ async function broadcastDiffs(interaction?: CommandInteraction) {
 }
 
 export async function notifyTargetPush(name: string, ip: string, portLow: string, portHigh: string) {
+    const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
+    if (attackThreadsChannel?.type !== ChannelType.GuildForum) return;
+
+    const targetEmbed = new EmbedBuilder()
+        .setTitle(name)
+        .setDescription(`- IP: ${ip}\n- Ports: ${portLow}-${portHigh}`)
+        .setColor('#C61130')
+        .setTimestamp();
+
+    const attackThread = await attackThreadsChannel.threads.create({
+        name,
+        message: { embeds: [targetEmbed] }
+    })
+
     const pushEmbed = new EmbedBuilder()
         .setTitle('New target pushed to targets repository')
-        .setDescription(`**${name}** (\`${name}_package.zip\`):\n- IP: ${ip}\n- Ports: ${portLow}-${portHigh}`)
+        .setDescription(`**${name}** (\`${name}_package.zip\`):\n- IP: ${ip}\n- Ports: ${portLow}-${portHigh}\nDiscussion: ${attackThread}`)
         .setColor('#C61130')
         .setTimestamp();
 

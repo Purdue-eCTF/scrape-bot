@@ -63,6 +63,7 @@ Other configuration options are found in `config.ts`:
   in the first place; leave this field blank at first, then force-send a status message and update the ID accordingly.
 - `FAILURE_CHANNEL_ID` — the discord channel to send "build failed" notifications in.
 - `ATTACK_NOTIFY_CHANNEL_ID` — the Discord channel to send "new target dropped" notifications in.
+- `ATTACK_FORUM_CHANNEL_ID` — the Discord forum channel to create target threads in.
 
 - `SLACK_TARGET_CHANNEL_ID` — the Slack channel to listen for target drops in.
 
