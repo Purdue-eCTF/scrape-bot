@@ -1,5 +1,6 @@
 import { App } from '@slack/bolt';
 import AdmZip from 'adm-zip';
+import AsyncLock from 'async-lock';
 import { exec } from 'node:child_process';
 import { notifyTargetPush } from '../bot';
 
@@ -12,6 +13,8 @@ export const slack = new App({
     token: SLACK_TOKEN,
     signingSecret: SLACK_SIGNING_SECRET
 });
+
+const lock = new AsyncLock();
 
 slack.message(async ({ client, message }) => {
     console.log('[SLACK]', message);
@@ -39,13 +42,10 @@ slack.message(async ({ client, message }) => {
     // Parse ip, ports from message content
     const [, ip, portLow, portHigh] = message.text.match(/IP:\s+(.+?)\n.*?Ports:\s+(\d+)-(\d+)/)!;
 
-    // In parallel: fetch raw file from Slack API and prepare repo for extraction
-    const [, buf] = await Promise.all([
-        execAsync('cd temp && git fetch && git reset --hard origin/main'),
-        fetch(file.url_private_download!, {
-            headers: { 'Authorization': `Bearer ${SLACK_TOKEN}` }
-        }).then((r) => r.arrayBuffer())
-    ])
+    // Download zip and extract to temp dir
+    const buf = await fetch(file.url_private_download!, {
+        headers: { 'Authorization': `Bearer ${SLACK_TOKEN}` }
+    }).then((r) => r.arrayBuffer())
 
     const zip = new AdmZip(Buffer.from(buf));
     zip.extractAllTo(`./temp/${name}`);
@@ -53,7 +53,9 @@ slack.message(async ({ client, message }) => {
 
     // TODO: automated attack tests
 
-    await execAsync(`cd temp && git add . && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
+    await lock.acquire('git', async () => {
+        await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
+    })
 
     await notifyTargetPush(name, ip, portLow, portHigh);
 });
@@ -69,6 +71,6 @@ function execAsync(cmd: string): Promise<string> {
 
 export async function initTargetsRepo() {
     console.log('[GIT] Initializing targets repository');
-    await execAsync(`git clone ${TARGETS_REPO_URL} temp || (cd temp && git fetch && git reset --hard origin/main)`);
+    await execAsync(`git clone ${TARGETS_REPO_URL} temp || (cd temp && git fetch && git pull --ff-only)`);
     console.log(await execAsync('cd temp && git status'));
 }
