@@ -252,6 +252,7 @@ client.on('interactionCreate', async (interaction) => {
     const res = challenges
         .filter(((c) => !c.solved_by_me && c.name.toLowerCase().startsWith(input.toLowerCase())))
         .map((c) => ({ name: c.name, value: c.id }))
+        .slice(0, 25)
 
     await interaction.respond(res);
 });
