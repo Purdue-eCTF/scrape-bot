@@ -13,7 +13,7 @@ export const slack = new App({
     signingSecret: SLACK_SIGNING_SECRET
 });
 
-slack.message(async ({ message }) => {
+slack.message(async ({ client, message }) => {
     console.log('[SLACK]', message);
 
     if (message.type !== 'message') return;
@@ -23,7 +23,13 @@ slack.message(async ({ message }) => {
     // them to the targets repository.
     if (message.channel !== SLACK_TARGET_CHANNEL_ID) return;
 
-    const file = message.files?.find((f) => f.filetype === 'zip');
+    // Look for zip files; if `file_access` is present, we need to handle the Slack Connect file download differently.
+    // https://api.slack.com/apis/channels-between-orgs#check_file_info
+    const raw = message.files?.find((f) => f.filetype === 'zip');
+    const file = raw && 'file_access' in raw && raw.file_access === 'check_file_info'
+        ? (await client.files.info({ file: raw.id })).file
+        : raw
+
     if (!file) return;
 
     // Slice off `_package.zip`
