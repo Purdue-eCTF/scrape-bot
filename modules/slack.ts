@@ -40,7 +40,7 @@ slack.message(async ({ client, message }) => {
     console.log('[SLACK] Found', file.name);
 
     // Parse ip, ports from message content
-    const [, ip, portLow, portHigh] = message.text.match(/IP:\s+(.+?)\n.*?Ports:\s+(\d+)-(\d+)/)!;
+    const [, ip, portLow, portHigh] = message.text.match(/(\d+\.\d+\.\d+\.\d+).*?(\d+)-(\d+)/s)!;
 
     // Download zip and extract to temp dir
     const buf = await fetch(file.url_private_download!, {
