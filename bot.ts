@@ -74,7 +74,7 @@ async function broadcastDiffs(interaction?: CommandInteraction) {
     await channel.send({ embeds: [diffEmbed] });
 }
 
-export async function notifyTargetPush(name: string, ip: string, portLow: string, portHigh: string) {
+export async function notifyTargetPush(name: string, ip: string, portLow: number, portHigh: number) {
     const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
     if (attackThreadsChannel?.type !== ChannelType.GuildForum) return;
 

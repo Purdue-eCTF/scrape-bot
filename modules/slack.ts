@@ -43,8 +43,7 @@ slack.message(async ({ client, message }) => {
     const name = file.name!.slice(0, -12);
     console.log('[SLACK] Found', file.name);
 
-    // Parse ip, ports from message content
-    const [, ip, portLow, portHigh] = message.text.match(/(\d+\.\d+\.\d+\.\d+).*?(\d+)-(\d+)/s)!;
+    const { ip, portLow, portHigh } = tryParseIpPort(message.text);
 
     // Download zip and extract to temp dir
     const buf = await fetch(file.url_private_download!, {
@@ -56,8 +55,7 @@ slack.message(async ({ client, message }) => {
     console.log('[SLACK] Extracted', file.name);
 
     // Write ports to target for build server
-    const ports = new Array(Number(portHigh) - Number(portLow)).fill(0).map((_, i) => Number(portLow) + i);
-    await writeFile(`./temp/${name}/ports.txt`, `${ip} ${ports.join(' ')}`);
+    await writePortsFile(name, ip, portLow, portHigh);
 
     // In parallel: send new design to build server, push design to git
     await Promise.all([
@@ -71,6 +69,25 @@ slack.message(async ({ client, message }) => {
         }
     ])
 });
+
+function tryParseIpPort(raw: string) {
+    const ip = raw.match(/\d+\.\d+\.\d+\.\d+/)?.[0];
+
+    const portMatches = raw.match(/(?<![.\d])(\d+)(?:-(\d+))?(?![.\d])/);
+    const portLow = Number(portMatches![1]);
+    // const portHigh = portMatches?.[2];
+
+    return {
+        ip: ip ?? '34.235.112.89', // If no IP parsed, assume default
+        portLow: portLow,
+        portHigh: portLow + 4, // Don't bother parsing higher port for typos; assume its always lower + 4
+    }
+}
+
+export async function writePortsFile(name: string, ip: string, portLow: number, portHigh: number) {
+    const ports = new Array(portHigh - portLow).fill(0).map((_, i) => portLow + i);
+    await writeFile(`./temp/${name}/ports.txt`, `${ip} ${ports.join(' ')}`);
+}
 
 function execAsync(cmd: string): Promise<string> {
     return new Promise((resolve, reject) => {
