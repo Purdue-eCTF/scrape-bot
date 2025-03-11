@@ -279,12 +279,14 @@ client.on('interactionCreate', async (interaction) => {
 
         case 'load':
             const url = interaction.options.getString('url', true);
+            await interaction.deferReply();
+
             await loadTargetFromSlackUrl(url);
 
             const successEmbed = new EmbedBuilder()
                 .setDescription('Loaded new target.')
                 .setColor('#C61130');
-            return void interaction.reply({ embeds: [successEmbed] });
+            return void interaction.editReply({ embeds: [successEmbed] });
 
         case 'attack':
             const subcommand = interaction.options.getSubcommand();

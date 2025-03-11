@@ -112,7 +112,7 @@ export async function loadTargetFromSlackUrl(link: string) {
         limit: 1,
         inclusive: true,
     })
-    console.log('[SLACK] Load response', res);
+    console.log('[SLACK] Load response', res, res.messages?.[0].files);
     if (!res.messages?.[0]) return;
 
     // TODO: no code reuse because slack api types are garbage
