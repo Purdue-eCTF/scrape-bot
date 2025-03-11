@@ -105,6 +105,34 @@ export async function notifyTargetPush(name: string, ip: string, portLow: number
     await channel.send({ embeds: [pushEmbed] });
 }
 
+export async function updateInfoForTeam(name: string, ip: string, portLow: number, portHigh: number) {
+    const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
+    if (attackThreadsChannel?.type !== ChannelType.GuildForum) return;
+
+    const attackThread = attackThreadsChannel.threads.cache.find((c) => c.name === name);
+    if (!attackThread) return;
+
+    const targetEmbed = new EmbedBuilder()
+        .setTitle(name)
+        .setDescription(`- IP: ${ip}\n- Ports: ${portLow}-${portHigh}`)
+        .setColor('#C61130')
+        .setTimestamp();
+
+    const message = await attackThread.fetchStarterMessage();
+    if (!message?.editable) {
+        // TODO: handle this
+        return;
+    } else {
+        await message.edit({ embeds: [targetEmbed] })
+    }
+
+    const resEmbed = new EmbedBuilder()
+        .setDescription(`IP and port updated > ${message}`)
+        .setColor('#C61130')
+
+    await attackThread.send({ embeds: [resEmbed] });
+}
+
 async function updateBuildStatus(req: BuildStatusUpdateReq) {
     const channel = client.channels.cache.get(STATUS_CHANNEL_ID);
     if (!channel?.isSendable())

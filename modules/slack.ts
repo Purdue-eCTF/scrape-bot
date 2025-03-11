@@ -9,7 +9,7 @@ import { SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
 import { SLACK_TARGET_CHANNEL_ID } from '../config';
 
 // Utils
-import { notifyTargetPush } from '../bot';
+import { notifyTargetPush, updateInfoForTeam } from '../bot';
 import { runAttacksOnLocalTarget } from './attack';
 
 
@@ -20,14 +20,15 @@ export const slack = new App({
 
 const lock = new AsyncLock();
 
+/**
+ * On message in attack targets channel: unzip target design and push to targets repository,
+ * parse IP / ports and create attack forum channel, and run automated attack tests on it.
+ */
 slack.message(async ({ client, message }) => {
     console.log('[SLACK]', message);
 
     if (message.type !== 'message') return;
     if (message.subtype !== 'file_share') return;
-
-    // Download zip files from the attack files channel, automatically unzipping and committing
-    // them to the targets repository.
     if (message.channel !== SLACK_TARGET_CHANNEL_ID) return;
 
     // Look for zip files; if `file_access` is present, we need to handle the Slack Connect file download differently.
@@ -54,7 +55,6 @@ slack.message(async ({ client, message }) => {
     zip.extractAllTo(`./temp/${name}`);
     console.log('[SLACK] Extracted', file.name);
 
-    // Write ports to target for build server
     await writePortsFile(name, ip, portLow, portHigh);
 
     // In parallel: send new design to build server, push design to git
@@ -68,6 +68,35 @@ slack.message(async ({ client, message }) => {
             await notifyTargetPush(name, ip, portLow, portHigh);
         }
     ])
+});
+
+/**
+ * When a target message is edited: update channel and targets repo with updated ports / IP.
+ * TODO: rerun attack tests?
+ */
+slack.message(async ({ client, message }) => {
+    if (message.type !== 'message') return;
+    if (message.subtype !== 'message_changed') return;
+    if (message.channel !== SLACK_TARGET_CHANNEL_ID) return;
+
+    if (!('files' in message.message) || !message.message.text) return;
+
+    const raw = message.message.files?.find((f) => f.filetype === 'zip');
+    const file = raw && 'file_access' in raw && raw.file_access === 'check_file_info'
+        ? (await client.files.info({ file: raw.id })).file
+        : raw
+
+    if (!file) return;
+
+    const { ip, portLow, portHigh } = tryParseIpPort(message.message.text);
+    const name = file.name!.slice(0, -12);
+
+    await updateInfoForTeam(name, ip, portLow, portHigh);
+
+    await writePortsFile(name, ip, portLow, portHigh);
+    await lock.acquire('git', async () => {
+        await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Update ports for ${name}" && git push`);
+    });
 });
 
 function tryParseIpPort(raw: string) {
