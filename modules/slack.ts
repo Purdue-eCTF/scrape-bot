@@ -114,7 +114,7 @@ function tryParseIpPort(raw: string) {
 }
 
 export async function writePortsFile(name: string, ip: string, portLow: number, portHigh: number) {
-    const ports = new Array(portHigh - portLow).fill(0).map((_, i) => portLow + i);
+    const ports = new Array(portHigh - portLow + 1).fill(0).map((_, i) => portLow + i);
     await writeFile(`./temp/${name}/ports.txt`, `${ip} ${ports.join(' ')}`);
 }
 

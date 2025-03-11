@@ -128,7 +128,7 @@ export async function updateInfoForTeam(name: string, ip: string, portLow: numbe
     }
 
     const resEmbed = new EmbedBuilder()
-        .setDescription(`IP and port updated > ${message}`)
+        .setDescription(`IP and port updated for \`${name}\`.\n[[Jump to message]](${message.url})`)
         .setColor('#C61130')
 
     await attackThread.send({ embeds: [resEmbed] });
@@ -301,6 +301,11 @@ client.on('interactionCreate', async (interaction) => {
                 await lock.acquire('git', async () => {
                     await execAsync(`cd temp && git pull --ff-only && git add "${target}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Update ports for ${target}" && git push`);
                 });
+
+                const successEmbed = new EmbedBuilder()
+                    .setDescription('Successfully updated target info.')
+                    .setColor('#C61130')
+                await interaction.reply({ embeds: [successEmbed] });
             }
     }
 });
