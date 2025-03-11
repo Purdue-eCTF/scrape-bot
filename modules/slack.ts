@@ -60,13 +60,13 @@ slack.message(async ({ client, message }) => {
     // In parallel: send new design to build server, push design to git
     await Promise.all([
         // runAttacksOnLocalTarget(name).catch(() => {}),
-        async () => {
+        (async () => {
             await lock.acquire('git', async () => {
                 await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
             })
 
             await notifyTargetPush(name, ip, portLow, portHigh);
-        }
+        })()
     ])
 });
 
@@ -112,7 +112,7 @@ export async function loadTargetFromSlackUrl(link: string) {
         limit: 1,
         inclusive: true,
     })
-    console.log('[SLACK] Load response', res, res.messages?.[0].files);
+    console.log('[SLACK] Load response', res);
     if (!res.messages?.[0]) return;
 
     // TODO: no code reuse because slack api types are garbage
@@ -139,13 +139,17 @@ export async function loadTargetFromSlackUrl(link: string) {
 
     await writePortsFile(name, ip, portLow, portHigh);
 
-    console.log('before lock :)')
-    await lock.acquire('git', async () => {
-        await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
-    })
-    console.log('after lock :)')
+    // In parallel: send new design to build server, push design to git
+    await Promise.all([
+        // runAttacksOnLocalTarget(name).catch(() => {}),
+        (async () => {
+            await lock.acquire('git', async () => {
+                await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
+            })
 
-    await notifyTargetPush(name, ip, portLow, portHigh);
+            await notifyTargetPush(name, ip, portLow, portHigh);
+        })()
+    ])
 }
 
 function tryParseIpPort(raw: string) {
