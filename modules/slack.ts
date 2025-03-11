@@ -117,8 +117,6 @@ export async function loadTargetFromSlackUrl(link: string) {
 
     // TODO: no code reuse because slack api types are garbage
     const message = res.messages[0];
-    if (message.type !== 'message') return;
-    if (message.subtype !== 'file_share') return;
     if (!message.text) return;
 
     const raw = message.files?.find((f) => f.filetype === 'zip');
