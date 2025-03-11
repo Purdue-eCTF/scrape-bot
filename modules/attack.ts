@@ -26,7 +26,7 @@ export async function runAttacksOnLocalTarget(team: string): Promise<string> {
 
             for (const line of lines) {
                 // Flush the current line
-                msg += lineBuf;
+                msg += lineBuf + '\n';
 
                 if (lineBuf.startsWith('%*&')) {
                     res(msg);

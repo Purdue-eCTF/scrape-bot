@@ -1,4 +1,4 @@
-import { ActivityType, ChannelType, Client, CommandInteraction, EmbedBuilder } from 'discord.js';
+import { ActivityType, AttachmentBuilder, ChannelType, Client, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { CronJob } from 'cron';
 import express from 'express';
 import bodyParser from 'body-parser';
@@ -252,7 +252,10 @@ client.on('interactionCreate', async (interaction) => {
                 await interaction.deferReply();
 
                 const ret = await runAttacksOnLocalTarget(target);
-                await interaction.editReply(ret.slice(0, 1000));
+                await interaction.editReply({
+                    content: 'test',
+                    files: [new AttachmentBuilder(Buffer.from(ret)).setName('logs.txt')]
+                });
             }
     }
 });
