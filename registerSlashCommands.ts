@@ -32,7 +32,17 @@ const globalCommands = [
         .addStringOption((option) => option
             .setName('flag')
             .setDescription('The flag to submit.')
-            .setRequired(true))
+            .setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('attack')
+        .setDescription('Attack commands')
+        .addSubcommand((c) => c
+            .setName('target')
+            .setDescription('(re)run automated attacks on the specified target.')
+            .addStringOption((option) => option
+                .setName('target')
+                .setDescription('The target to attack.')
+                .setRequired(true)))
 ];
 
 const clientId = '1199441161077674105';

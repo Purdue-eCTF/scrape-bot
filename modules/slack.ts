@@ -2,11 +2,15 @@ import { App } from '@slack/bolt';
 import AdmZip from 'adm-zip';
 import AsyncLock from 'async-lock';
 import { exec } from 'node:child_process';
-import { notifyTargetPush } from '../bot';
+import { writeFile } from 'node:fs/promises';
 
 // Config
 import { SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
 import { SLACK_TARGET_CHANNEL_ID } from '../config';
+
+// Utils
+import { notifyTargetPush } from '../bot';
+import { runAttacksOnLocalTarget } from './attack';
 
 
 export const slack = new App({
@@ -51,13 +55,21 @@ slack.message(async ({ client, message }) => {
     zip.extractAllTo(`./temp/${name}`);
     console.log('[SLACK] Extracted', file.name);
 
-    // TODO: automated attack tests
+    // Write ports to target for build server
+    const ports = new Array(Number(portHigh) - Number(portLow)).fill(0).map((_, i) => Number(portLow) + i);
+    await writeFile(`./temp/${name}/ports.txt`, `${ip} ${ports.join(' ')}`);
 
-    await lock.acquire('git', async () => {
-        await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
-    })
+    // In parallel: send new design to build server, push design to git
+    await Promise.all([
+        runAttacksOnLocalTarget(name),
+        async () => {
+            await lock.acquire('git', async () => {
+                await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
+            })
 
-    await notifyTargetPush(name, ip, portLow, portHigh);
+            await notifyTargetPush(name, ip, portLow, portHigh);
+        }
+    ])
 });
 
 function execAsync(cmd: string): Promise<string> {

@@ -8,6 +8,7 @@ import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor 
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
 import { challenges, ctfdClient, fetchAndUpdateChallenges, wrapFlagForChallenge } from './modules/challenges';
 import { initTargetsRepo, slack } from './modules/slack';
+import { runAttacksOnLocalTarget } from './modules/attack';
 
 // Config
 import { DISCORD_TOKEN } from './auth';
@@ -242,6 +243,17 @@ client.on('interactionCreate', async (interaction) => {
                 .setColor('#C61130')
                 .setTimestamp();
             return void interaction.reply({ embeds: [submitEmbed] });
+
+        case 'attack':
+            const subcommand = interaction.options.getSubcommand();
+
+            if (subcommand === 'target') {
+                const target = interaction.options.getString('target', true);
+                await interaction.deferReply();
+
+                const ret = await runAttacksOnLocalTarget(target);
+                await interaction.editReply(ret.slice(0, 1000));
+            }
     }
 });
 
