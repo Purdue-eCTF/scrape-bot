@@ -139,17 +139,13 @@ export async function loadTargetFromSlackUrl(link: string) {
 
     await writePortsFile(name, ip, portLow, portHigh);
 
-    // In parallel: send new design to build server, push design to git
-    await Promise.all([
-        // runAttacksOnLocalTarget(name).catch(() => {}),
-        async () => {
-            await lock.acquire('git', async () => {
-                await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
-            })
+    console.log('before lock :)')
+    await lock.acquire('git', async () => {
+        await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
+    })
+    console.log('after lock :)')
 
-            await notifyTargetPush(name, ip, portLow, portHigh);
-        }
-    ])
+    await notifyTargetPush(name, ip, portLow, portHigh);
 }
 
 function tryParseIpPort(raw: string) {
