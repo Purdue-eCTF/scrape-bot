@@ -87,7 +87,11 @@ export async function notifyTargetPush(name: string, ip: string, portLow: string
     const attackThread = await attackThreadsChannel.threads.create({
         name,
         message: { embeds: [targetEmbed] }
-    })
+    });
+
+    // Pin ports info message
+    const message = await attackThread.fetchStarterMessage();
+    await message?.pin();
 
     const pushEmbed = new EmbedBuilder()
         .setTitle('New target pushed to targets repository')
@@ -233,8 +237,8 @@ client.on('interactionCreate', async (interaction) => {
         case 'submit':
             const id = interaction.options.getInteger('challenge', true);
             const challName = challenges.find((c) => c.id === id)!.name;
-            const flag = wrapFlagForChallenge(challName, interaction.options.getString('flag', true));
 
+            const flag = wrapFlagForChallenge(challName, interaction.options.getString('flag', true));
             const res = await ctfdClient.submitFlag(id, flag);
 
             const submitEmbed = new EmbedBuilder()
