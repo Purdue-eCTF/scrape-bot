@@ -6,9 +6,8 @@ import bodyParser from 'body-parser';
 // Modules
 import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
-import { challenges, ctfdClient, fetchAndUpdateChallenges } from './modules/challenges';
+import { challenges, ctfdClient, fetchAndUpdateChallenges, wrapFlagForChallenge } from './modules/challenges';
 import { initTargetsRepo, slack } from './modules/slack';
-import { wrapFlagForChallenge } from './modules/flag';
 
 // Config
 import { DISCORD_TOKEN } from './auth';

@@ -15,3 +15,38 @@ export async function fetchAndUpdateChallenges() {
 
     challenges = await ctfdClient.getChallenges();
 }
+
+const CHALLENGE_FORMATS = [
+    {
+        name: "Expired Subscription",
+        prefix: "expired_",
+    },
+    {
+        name: "Pirated Subscription",
+        prefix: "pirate_",
+    },
+    {
+        name: "No Subscription",
+        prefix: "nosub_",
+    },
+    {
+        name: "Recording Playback",
+        prefix: "recording_"
+    },
+    {
+        name: "Pesky Neighbor",
+        prefix: "neighbor_",
+    }
+];
+
+export function wrapFlagForChallenge(challengeName: string, flag: string) {
+    if (flag.includes("ectf{"))
+        return flag;
+
+    const challenge = CHALLENGE_FORMATS.find(chall => challengeName.includes(chall.name));
+    if (!challenge)
+        return flag;
+
+    return `ectf{${challenge.prefix}${flag}}`;
+}
+
