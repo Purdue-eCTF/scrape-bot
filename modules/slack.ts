@@ -106,16 +106,17 @@ export async function loadTargetFromSlackUrl(link: string) {
     if (!parts) return;
 
     const [, channel, ts1, ts2] = parts;
-    const { messages } = await slack.client.conversations.history({
+    const res = await slack.client.conversations.history({
         channel: channel,
         latest: `${ts1}.${ts2}`,
         limit: 1,
         inclusive: true,
     })
-    if (!messages?.[0]) return;
+    console.log('[SLACK] Load response', res);
+    if (!res.messages?.[0]) return;
 
     // TODO: no code reuse because slack api types are garbage
-    const message = messages[0];
+    const message = res.messages[0];
     if (message.type !== 'message') return;
     if (message.subtype !== 'file_share') return;
     if (!message.text) return;
