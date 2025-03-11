@@ -69,7 +69,7 @@ async function broadcastDiffs(interaction?: CommandInteraction) {
         return await interaction.reply({ embeds: [diffEmbed] });
 
     const channel = client.channels.cache.get(SCOREBOARD_NOTIFY_CHANNEL_ID);
-    if (!channel?.isTextBased()) return;
+    if (!channel?.isSendable()) return;
 
     await channel.send({ embeds: [diffEmbed] });
 }
@@ -96,14 +96,14 @@ export async function notifyTargetPush(name: string, ip: string, portLow: string
         .setTimestamp();
 
     const channel = client.channels.cache.get(ATTACK_NOTIFY_CHANNEL_ID);
-    if (!channel?.isTextBased()) return;
+    if (!channel?.isSendable()) return;
 
     await channel.send({ embeds: [pushEmbed] });
 }
 
 async function updateBuildStatus(req: BuildStatusUpdateReq) {
     const channel = client.channels.cache.get(STATUS_CHANNEL_ID);
-    if (!channel?.isTextBased())
+    if (!channel?.isSendable())
         return console.error('[BUILD] Could not find build status channel!');
 
     const message = channel.messages.cache.get(STATUS_MESSAGE_ID)
@@ -146,7 +146,7 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
             .setDescription(`[\`${req.update.state.commit.hash.slice(0, 7)}\`]: ${req.update.state.commit.name} (@${req.update.state.commit.author})\n[[Jump to failed workflow]](${runHref})`)
             .setTimestamp()
 
-        if (failureChannel?.isTextBased())
+        if (failureChannel?.isSendable())
             failureChannel.send({ embeds: [failureEmbed] })
     }
 
