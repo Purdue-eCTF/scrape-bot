@@ -32,6 +32,13 @@ const globalCommands = [
             .setDescription('The flag to submit.')
             .setRequired(true)),
     new SlashCommandBuilder()
+        .setName('load')
+        .setDescription('Loads a target from the specified Slack URL (useful if Tom crashed before pushing).')
+        .addStringOption((option) => option
+            .setName('url')
+            .setDescription('The URL to fetch a target from.')
+            .setRequired(true)),
+    new SlashCommandBuilder()
         .setName('attack')
         .setDescription('Attack commands')
         .addSubcommand((c) => c

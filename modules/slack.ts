@@ -59,7 +59,7 @@ slack.message(async ({ client, message }) => {
 
     // In parallel: send new design to build server, push design to git
     await Promise.all([
-        runAttacksOnLocalTarget(name),
+        runAttacksOnLocalTarget(name).catch(() => {}),
         async () => {
             await lock.acquire('git', async () => {
                 await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
@@ -98,6 +98,60 @@ slack.message(async ({ client, message }) => {
         await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Update ports for ${name}" && git push`);
     });
 });
+
+export async function loadTargetFromSlackUrl(link: string) {
+    // Fetch message object from slack web api
+    // TODO: error messages
+    const parts = link.match(/\/archives\/(.+?)\/p(\d+)(\d{6})/);
+    if (!parts) return;
+
+    const [, channel, ts1, ts2] = parts;
+    const { messages } = await slack.client.conversations.history({
+        channel: channel,
+        latest: `${ts1}.${ts2}`,
+        limit: 1,
+        inclusive: true,
+    })
+    if (!messages?.[0]) return;
+
+    // TODO: no code reuse because slack api types are garbage
+    const message = messages[0];
+    if (message.type !== 'message') return;
+    if (message.subtype !== 'file_share') return;
+    if (!message.text) return;
+
+    const raw = message.files?.find((f) => f.filetype === 'zip');
+    const file = raw && 'file_access' in raw && raw.file_access === 'check_file_info'
+        ? (await slack.client.files.info({ file: raw.id! })).file
+        : raw
+
+    if (!file) return;
+
+    const { ip, portLow, portHigh } = tryParseIpPort(message.text);
+    const name = file.name!.slice(0, -12);
+
+    // Download zip and extract to temp dir
+    const buf = await fetch(file.url_private_download!, {
+        headers: { 'Authorization': `Bearer ${SLACK_TOKEN}` }
+    }).then((r) => r.arrayBuffer())
+
+    const zip = new AdmZip(Buffer.from(buf));
+    zip.extractAllTo(`./temp/${name}`);
+
+    await writePortsFile(name, ip, portLow, portHigh);
+
+    // In parallel: send new design to build server, push design to git
+    await Promise.all([
+        runAttacksOnLocalTarget(name).catch(() => {}),
+        async () => {
+            await lock.acquire('git', async () => {
+                await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
+            })
+
+            await notifyTargetPush(name, ip, portLow, portHigh);
+        }
+    ])
+}
 
 function tryParseIpPort(raw: string) {
     const ip = raw.match(/\d+\.\d+\.\d+\.\d+/)?.[0];

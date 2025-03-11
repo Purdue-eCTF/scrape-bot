@@ -7,7 +7,7 @@ import bodyParser from 'body-parser';
 import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
 import { challenges, ctfdClient, fetchAndUpdateChallenges, wrapFlagForChallenge } from './modules/challenges';
-import { initTargetsRepo, lock, slack, writePortsFile } from './modules/slack';
+import { initTargetsRepo, loadTargetFromSlackUrl, lock, slack, writePortsFile } from './modules/slack';
 import { runAttacksOnLocalTarget } from './modules/attack';
 import { execAsync } from './util/exec';
 
@@ -277,6 +277,15 @@ client.on('interactionCreate', async (interaction) => {
                 .setTimestamp();
             return void interaction.reply({ embeds: [submitEmbed] });
 
+        case 'load':
+            const url = interaction.options.getString('url', true);
+            await loadTargetFromSlackUrl(url);
+
+            const successEmbed = new EmbedBuilder()
+                .setDescription('Loaded new target.')
+                .setColor('#C61130');
+            return void interaction.reply({ embeds: [successEmbed] });
+
         case 'attack':
             const subcommand = interaction.options.getSubcommand();
 
@@ -307,6 +316,8 @@ client.on('interactionCreate', async (interaction) => {
                     .setColor('#C61130')
                 await interaction.reply({ embeds: [successEmbed] });
             }
+
+            break;
     }
 });
 
