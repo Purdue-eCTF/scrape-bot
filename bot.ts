@@ -8,6 +8,7 @@ import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor 
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
 import { challenges, ctfdClient, fetchAndUpdateChallenges } from './modules/challenges';
 import { initTargetsRepo, slack } from './modules/slack';
+import { wrapFlagForChallenge } from './modules/flag';
 
 // Config
 import { DISCORD_TOKEN } from './auth';
@@ -231,10 +232,10 @@ client.on('interactionCreate', async (interaction) => {
 
         case 'submit':
             const id = interaction.options.getInteger('challenge', true);
-            const flag = interaction.options.getString('flag', true);
+            const challName = challenges.find((c) => c.id === id)!.name;
+            const flag = wrapFlagForChallenge(challName, interaction.options.getString('flag', true));
 
             const res = await ctfdClient.submitFlag(id, flag);
-            const challName = challenges.find((c) => c.id === id)!.name;
 
             const submitEmbed = new EmbedBuilder()
                 .setTitle(`Flag submission for \`${challName}\``)
