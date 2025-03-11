@@ -41,6 +41,25 @@ const globalCommands = [
                 .setName('target')
                 .setDescription('The target to attack.')
                 .setRequired(true)))
+        .addSubcommand((c) => c
+            .setName('update')
+            .setDescription('Update the IP and port for the specified target.')
+            .addStringOption((option) => option
+                .setName('target')
+                .setDescription('The target to update.')
+                .setRequired(true))
+            .addStringOption((option) => option
+                .setName('ip')
+                .setDescription('The new IP.')
+                .setRequired(true))
+            .addIntegerOption((option) => option
+                .setName('port_low')
+                .setDescription('The new low port.')
+                .setRequired(true))
+            .addIntegerOption((option) => option
+                .setName('port_high')
+                .setDescription('The new high port.')
+                .setRequired(true)))
 ];
 
 const clientId = '1199441161077674105';

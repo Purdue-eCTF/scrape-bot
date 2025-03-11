@@ -7,8 +7,9 @@ import bodyParser from 'body-parser';
 import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
 import { challenges, ctfdClient, fetchAndUpdateChallenges, wrapFlagForChallenge } from './modules/challenges';
-import { initTargetsRepo, slack } from './modules/slack';
+import { initTargetsRepo, lock, slack, writePortsFile } from './modules/slack';
 import { runAttacksOnLocalTarget } from './modules/attack';
+import { execAsync } from './util/exec';
 
 // Config
 import { DISCORD_TOKEN } from './auth';
@@ -287,6 +288,18 @@ client.on('interactionCreate', async (interaction) => {
                 await interaction.editReply({
                     content: 'test',
                     files: [new AttachmentBuilder(Buffer.from(ret)).setName('logs.txt')]
+                });
+            } else if (subcommand === 'update') {
+                const target = interaction.options.getString('target', true);
+                const ip = interaction.options.getString('ip', true);
+                const portLow = interaction.options.getInteger('port_low', true);
+                const portHigh = interaction.options.getInteger('port_high', true);
+
+                await updateInfoForTeam(target, ip, portLow, portHigh);
+
+                await writePortsFile(target, ip, portLow, portHigh);
+                await lock.acquire('git', async () => {
+                    await execAsync(`cd temp && git pull --ff-only && git add "${target}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Update ports for ${target}" && git push`);
                 });
             }
     }

@@ -1,16 +1,16 @@
 import { App } from '@slack/bolt';
 import AdmZip from 'adm-zip';
 import AsyncLock from 'async-lock';
-import { exec } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';
+
+// Utils
+import { execAsync } from '../util/exec';
+import { notifyTargetPush, updateInfoForTeam } from '../bot';
+import { runAttacksOnLocalTarget } from './attack';
 
 // Config
 import { SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
 import { SLACK_TARGET_CHANNEL_ID } from '../config';
-
-// Utils
-import { notifyTargetPush, updateInfoForTeam } from '../bot';
-import { runAttacksOnLocalTarget } from './attack';
 
 
 export const slack = new App({
@@ -18,7 +18,7 @@ export const slack = new App({
     signingSecret: SLACK_SIGNING_SECRET
 });
 
-const lock = new AsyncLock();
+export const lock = new AsyncLock();
 
 /**
  * On message in attack targets channel: unzip target design and push to targets repository,
@@ -116,15 +116,6 @@ function tryParseIpPort(raw: string) {
 export async function writePortsFile(name: string, ip: string, portLow: number, portHigh: number) {
     const ports = new Array(portHigh - portLow).fill(0).map((_, i) => portLow + i);
     await writeFile(`./temp/${name}/ports.txt`, `${ip} ${ports.join(' ')}`);
-}
-
-function execAsync(cmd: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        exec(cmd, (err, stdout, stderr) => {
-            if (err) return reject(err);
-            return resolve(stdout);
-        });
-    })
 }
 
 export async function initTargetsRepo() {
