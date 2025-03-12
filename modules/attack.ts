@@ -1,19 +1,17 @@
-import { Socket } from 'node:net';
+import { createConnection } from 'node:net';
 import { trySubmitFlag } from './challenges';
 import { AUTH_SECRET } from '../auth';
 
 
 export async function runAttacksOnLocalTarget(team: string): Promise<string> {
-    const attackSocket = new Socket();
-
-    attackSocket.connect({
-        host: 'ctf.b01lers.com',
+    const attackSocket = createConnection({
+        host: 'host.docker.internal',
         port: 8888
-    });
-
-    attackSocket.once('ready', () => {
+    }, () => {
         attackSocket.write(`${AUTH_SECRET}|attack-target`);
-        attackSocket.write(`${team}`)
+        attackSocket.once('data', () => {
+            attackSocket.write(`${team}`);
+        });
     });
 
     return new Promise((res, rej) => {

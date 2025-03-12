@@ -11,3 +11,5 @@ services:
         volumes:
             - ./temp:/app/temp
         restart: always
+        extra_hosts:
+            - "host.docker.internal:host-gateway"

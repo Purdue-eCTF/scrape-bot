@@ -141,7 +141,7 @@ export async function loadTargetFromSlackUrl(link: string) {
 
     // In parallel: send new design to build server, push design to git
     await Promise.all([
-        // runAttacksOnLocalTarget(name).catch(() => {}),
+        runAttacksOnLocalTarget(name).catch(() => {}),
         (async () => {
             await lock.acquire('git', async () => {
                 await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
