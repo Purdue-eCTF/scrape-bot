@@ -166,7 +166,7 @@ export async function loadTargetFromSlackUrl(link: string) {
 function tryParseIpPort(raw: string) {
     const ip = raw.match(/\d+\.\d+\.\d+\.\d+/)?.[0];
 
-    const portMatches = raw.match(/(?<![.\d])(\d+)(?:-(\d+))?(?![.\d])/);
+    const portMatches = raw.match(/(?<![.\d])(\d{3,})(?:-(\d+))?(?![.\d])/);
     const portLow = Number(portMatches![1]);
     // const portHigh = portMatches?.[2];
 
