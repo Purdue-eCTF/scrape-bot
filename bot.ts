@@ -8,7 +8,7 @@ import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor 
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
 import { challenges, ctfdClient, fetchAndUpdateChallenges, wrapFlagForChallenge } from './modules/challenges';
 import { initTargetsRepo, loadTargetFromSlackUrl, lock, slack, writePortsFile } from './modules/slack';
-import { runAttacksOnLocalTarget } from './modules/attack';
+import { formatAttackOutput, runAttacksOnLocalTarget } from './modules/attack';
 import { execAsync } from './util/exec';
 
 // Config
@@ -104,6 +104,8 @@ export async function notifyTargetPush(name: string, ip: string, portLow: number
     if (!channel?.isSendable()) return;
 
     await channel.send({ embeds: [pushEmbed] });
+
+    return attackThread;
 }
 
 export async function updateInfoForTeam(name: string, ip: string, portLow: number, portHigh: number) {
@@ -295,10 +297,10 @@ client.on('interactionCreate', async (interaction) => {
                 const target = interaction.options.getString('target', true);
                 await interaction.deferReply();
 
-                const ret = await runAttacksOnLocalTarget(target);
+                const [logs, alerts] = await runAttacksOnLocalTarget(target);
                 await interaction.editReply({
-                    content: 'test',
-                    files: [new AttachmentBuilder(Buffer.from(ret)).setName('logs.txt')]
+                    content: formatAttackOutput(target, alerts),
+                    files: [new AttachmentBuilder(Buffer.from(logs)).setName('logs.txt')]
                 });
             } else if (subcommand === 'update') {
                 const target = interaction.options.getString('target', true);

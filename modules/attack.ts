@@ -3,7 +3,7 @@ import { trySubmitFlag } from './challenges';
 import { AUTH_SECRET } from '../auth';
 
 
-export async function runAttacksOnLocalTarget(team: string): Promise<string> {
+export async function runAttacksOnLocalTarget(team: string): Promise<[string, string[]]> {
     const attackSocket = createConnection({
         host: 'host.docker.internal',
         port: 8888
@@ -15,7 +15,8 @@ export async function runAttacksOnLocalTarget(team: string): Promise<string> {
     });
 
     return new Promise((res, rej) => {
-        let msg = '';
+        const alerts: string[] = [];
+        let logs = '';
         let lineBuf = '';
 
         attackSocket.on('data', async (d) => {
@@ -24,21 +25,27 @@ export async function runAttacksOnLocalTarget(team: string): Promise<string> {
 
             for (const line of lines) {
                 // Flush the current line
-                msg += lineBuf + '\n';
+                logs += lineBuf + '\n';
 
-                if (lineBuf.startsWith('%*&')) {
-                    res(msg);
-                    return;
-                }
+                if (lineBuf.startsWith('%*&'))
+                    return res([logs, alerts]);
 
                 const flag = lineBuf.match(/ectf\{.+?}/)?.[0];
                 if (flag) {
                     const message = await trySubmitFlag(flag, team);
-                    // TODO
+                    alerts.push(message);
                 }
 
                 lineBuf = line;
             }
         });
     });
+}
+
+export function formatAttackOutput(name: string, alerts: string[]) {
+    const alertText = alerts.length > 0
+        ? alerts.map(a => '- ' + a).join('\n')
+        : '- No vulnerabilities detected.';
+
+    return `# Automated attack output for \`${name}\`\n-# Summary:\n${alertText}`
 }

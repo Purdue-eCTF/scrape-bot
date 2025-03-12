@@ -36,7 +36,7 @@ const globalCommands = [
         .setDescription('Loads a target from the specified Slack URL (useful if Tom crashed before pushing).')
         .addStringOption((option) => option
             .setName('url')
-            .setDescription('The URL to fetch a target from.')
+            .setDescription('The URL to fetch the target from.')
             .setRequired(true)),
     new SlashCommandBuilder()
         .setName('attack')

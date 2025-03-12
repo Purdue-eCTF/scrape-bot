@@ -6,11 +6,12 @@ import { writeFile } from 'node:fs/promises';
 // Utils
 import { execAsync } from '../util/exec';
 import { notifyTargetPush, updateInfoForTeam } from '../bot';
-import { runAttacksOnLocalTarget } from './attack';
+import { formatAttackOutput, runAttacksOnLocalTarget } from './attack';
 
 // Config
 import { SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
 import { SLACK_TARGET_CHANNEL_ID } from '../config';
+import { AttachmentBuilder } from 'discord.js';
 
 
 export const slack = new App({
@@ -58,16 +59,21 @@ slack.message(async ({ client, message }) => {
     await writePortsFile(name, ip, portLow, portHigh);
 
     // In parallel: send new design to build server, push design to git
-    await Promise.all([
-        // runAttacksOnLocalTarget(name).catch(() => {}),
+    const [logs, thread] = await Promise.all([
+        runAttacksOnLocalTarget(name).catch(() => {}),
         (async () => {
             await lock.acquire('git', async () => {
                 await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
             })
 
-            await notifyTargetPush(name, ip, portLow, portHigh);
+            return notifyTargetPush(name, ip, portLow, portHigh);
         })()
     ])
+
+    if (logs) thread?.send({
+        content: formatAttackOutput(name, logs[1]),
+        files: [new AttachmentBuilder(Buffer.from(logs[0])).setName('logs.txt')]
+    });
 });
 
 /**
@@ -140,16 +146,21 @@ export async function loadTargetFromSlackUrl(link: string) {
     await writePortsFile(name, ip, portLow, portHigh);
 
     // In parallel: send new design to build server, push design to git
-    await Promise.all([
+    const [logs, thread] = await Promise.all([
         runAttacksOnLocalTarget(name).catch(() => {}),
         (async () => {
             await lock.acquire('git', async () => {
                 await execAsync(`cd temp && git pull --ff-only && git add "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
             })
 
-            await notifyTargetPush(name, ip, portLow, portHigh);
+            return notifyTargetPush(name, ip, portLow, portHigh);
         })()
     ])
+
+    if (logs) thread?.send({
+        content: formatAttackOutput(name, logs[1]),
+        files: [new AttachmentBuilder(Buffer.from(logs[0])).setName('logs.txt')]
+    });
 }
 
 function tryParseIpPort(raw: string) {

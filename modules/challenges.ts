@@ -53,16 +53,16 @@ export function wrapFlagForChallenge(challengeName: string, flag: string) {
 export async function trySubmitFlag(flag: string, team: string) {
     const prefix = flag.match(/ectf\{(\w+?_).+}/)?.[1];
     if (!prefix)
-        return `Missing prefix for flag: \`${flag}\``
+        return `Found potential flag: \`${flag}\` [missing prefix]`
 
     const scenario = CHALLENGE_FORMATS.find((c) => c.prefix === prefix)?.name;
     if (!scenario)
-        return `Could not parse scenario for flag: \`${flag}\``
+        return `Found potential flag: \`${flag}\` [missing scenario]`
 
     const chall = challenges.find((c) => c.name.toLowerCase() === `${scenario} - ${team}`.toLowerCase());
     if (!chall)
-        return `Could not find matching challenge for flag: \`${flag}\``
+        return `Found potential flag: \`${flag}\` [challenge not found]`
 
     const data = await ctfdClient.submitFlag(chall.id, flag);
-    return `Submitted \`${flag}\` with status ${data.status}`
+    return `Found potential flag: \`${flag}\` [submitted w/ status \`${data.status}\`]`
 }
