@@ -330,7 +330,7 @@ client.on('interactionCreate', async (interaction) => {
 
     const input = interaction.options.getFocused();
     const res = challenges
-        .filter(((c) => !c.solved_by_me && c.name.toLowerCase().startsWith(input.toLowerCase())))
+        .filter(((c) => !c.solved_by_me && c.name.toLowerCase().includes(input.toLowerCase())))
         .map((c) => ({ name: c.name, value: c.id }))
         .slice(0, 25)
 
