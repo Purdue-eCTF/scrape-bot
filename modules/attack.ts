@@ -36,7 +36,7 @@ export async function runAttacksOnLocalTarget(team: string): Promise<[string, st
                     alerts.push(message);
                 }
 
-                const vuln = lineBuf.match(/POTENTIAL VULNERABILITY: (.+)/)?.[0];
+                const vuln = lineBuf.match(/POTENTIAL VULNERABILITY: (.+)/)?.[1];
                 if (vuln) {
                     alerts.push(`Potential vulnerability: ${vuln}`);
                 }
