@@ -1,6 +1,9 @@
 import { createConnection } from 'node:net';
-import { trySubmitFlag } from './challenges';
 import { AUTH_SECRET } from '../auth';
+
+// Utils
+import { trySubmitFlag } from './challenges';
+import { truncate } from '../util/strings';
 
 
 export async function runAttacksOnLocalTarget(team: string): Promise<[string, string[]]> {
@@ -52,5 +55,5 @@ export function formatAttackOutput(name: string, alerts: string[]) {
         ? alerts.map(a => '- ' + a).join('\n')
         : '- No vulnerabilities detected.';
 
-    return `# Automated attack output for \`${name}\`\n-# Summary:\n${alertText}`
+    return truncate(`# Automated attack output for \`${name}\`\n-# Summary:\n${alertText}`, 4000);
 }
