@@ -21,6 +21,7 @@ export async function runAttacksOnLocalTarget(team: string): Promise<[string, st
         const alerts: string[] = [];
         let logs = '';
         let lineBuf = '';
+        let flagSubmissions = [];
 
         attackSocket.on('data', async (d) => {
             const [curr, ...lines] = d.toString().split('\n');
@@ -30,13 +31,18 @@ export async function runAttacksOnLocalTarget(team: string): Promise<[string, st
                 // Flush the current line
                 logs += lineBuf + '\n';
 
-                if (lineBuf.startsWith('%*&'))
+                if (lineBuf.startsWith('%*&')) {
+                    await Promise.all(flagSubmissions);
                     return res([logs, alerts]);
+                }
 
                 const flag = lineBuf.match(/ectf\{.+?}/)?.[0];
                 if (flag) {
-                    const message = await trySubmitFlag(flag, team);
-                    alerts.push(message);
+                    flagSubmissions.push(
+						trySubmitFlag(flag, team).then((message) => {
+							alerts.push(message);
+						})
+					);
                 }
 
                 const vuln = lineBuf.match(/POTENTIAL VULNERABILITY: (.+)/)?.[1];
