@@ -39,10 +39,10 @@ export async function runAttacksOnLocalTarget(team: string): Promise<[string, st
                 const flag = lineBuf.match(/ectf\{.+?}/)?.[0];
                 if (flag) {
                     flagSubmissions.push(
-						trySubmitFlag(flag, team).then((message) => {
-							alerts.push(message);
-						})
-					);
+                        trySubmitFlag(flag, team).then((message) => {
+                            alerts.push(message);
+                        })
+                    );
                 }
 
                 const vuln = lineBuf.match(/POTENTIAL VULNERABILITY: (.+)/)?.[1];
