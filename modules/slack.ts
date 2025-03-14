@@ -63,7 +63,7 @@ slack.message(async ({ client, message }) => {
         runAttacksOnLocalTarget(name).catch(() => {}),
         (async () => {
             await lock.acquire('git', async () => {
-                await execAsync(`cd temp && git pull --ff-only && git add -f "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
+                await execAsync(`cd temp && git pull --ff-only && git add -f "${name}/" && (git diff-index --quiet HEAD || git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push)`);
             })
 
             return notifyTargetPush(name, ip, portLow, portHigh);
@@ -101,7 +101,7 @@ slack.message(async ({ client, message }) => {
 
     await writePortsFile(name, ip, portLow, portHigh);
     await lock.acquire('git', async () => {
-        await execAsync(`cd temp && git pull --ff-only && git add -f "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Update ports for ${name}" && git push`);
+        await execAsync(`cd temp && git pull --ff-only && git add -f "${name}/" && (git diff-index --quiet HEAD || git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Update ports for ${name}" && git push)`);
     });
 });
 
@@ -150,7 +150,7 @@ export async function loadTargetFromSlackUrl(link: string) {
         runAttacksOnLocalTarget(name).catch(() => {}),
         (async () => {
             await lock.acquire('git', async () => {
-                await execAsync(`cd temp && git pull --ff-only && git add -f "${name}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push`);
+                await execAsync(`cd temp && git pull --ff-only && git add -f "${name}/" && (git diff-index --quiet HEAD || git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push)`);
             })
 
             return notifyTargetPush(name, ip, portLow, portHigh);

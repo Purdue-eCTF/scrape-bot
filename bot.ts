@@ -79,20 +79,24 @@ export async function notifyTargetPush(name: string, ip: string, portLow: number
     const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
     if (attackThreadsChannel?.type !== ChannelType.GuildForum) return;
 
-    const targetEmbed = new EmbedBuilder()
-        .setTitle(name)
-        .setDescription(`- IP: ${ip}\n- Ports: ${portLow}-${portHigh}`)
-        .setColor('#C61130')
-        .setTimestamp();
+    // If the channel already exists, use it; otherwise, make a new channel.
+    let attackThread = attackThreadsChannel.threads.cache.find((c) => c.name === name);
+    if (!attackThread) {
+        const targetEmbed = new EmbedBuilder()
+            .setTitle(name)
+            .setDescription(`- IP: ${ip}\n- Ports: ${portLow}-${portHigh}`)
+            .setColor('#C61130')
+            .setTimestamp();
 
-    const attackThread = await attackThreadsChannel.threads.create({
-        name,
-        message: { embeds: [targetEmbed] }
-    });
+        attackThread = await attackThreadsChannel.threads.create({
+            name,
+            message: { embeds: [targetEmbed] }
+        });
 
-    // Pin ports info message
-    const message = await attackThread.fetchStarterMessage();
-    await message?.pin();
+        // Pin ports info message
+        const message = await attackThread.fetchStarterMessage();
+        await message?.pin();
+    }
 
     const pushEmbed = new EmbedBuilder()
         .setTitle('New target pushed to targets repository')
