@@ -47,6 +47,7 @@ const globalCommands = [
             .addStringOption((option) => option
                 .setName('target')
                 .setDescription('The target to attack.')
+                .setAutocomplete(true)
                 .setRequired(true)))
         .addSubcommand((c) => c
             .setName('update')
@@ -54,6 +55,7 @@ const globalCommands = [
             .addStringOption((option) => option
                 .setName('target')
                 .setDescription('The target to update.')
+                .setAutocomplete(true)
                 .setRequired(true))
             .addStringOption((option) => option
                 .setName('ip')

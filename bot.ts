@@ -336,14 +336,31 @@ client.on('interactionCreate', async (interaction) => {
 
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isAutocomplete()) return;
-
     const input = interaction.options.getFocused();
-    const res = challenges
-        .filter(((c) => !c.solved_by_me && c.name.toLowerCase().includes(input.toLowerCase())))
-        .map((c) => ({ name: c.name, value: c.id }))
-        .slice(0, 25)
 
-    await interaction.respond(res);
+    switch (interaction.commandName) {
+        case 'submit':
+            const challs = challenges
+                .filter(((c) => !c.solved_by_me && c.name.toLowerCase().includes(input.toLowerCase())))
+                .map((c) => ({ name: c.name, value: c.id }))
+                .slice(0, 25)
+
+            return interaction.respond(challs);
+
+        case 'attack':
+            // TODO: switch on subcommand?
+
+            const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
+            if (attackThreadsChannel?.type !== ChannelType.GuildForum)
+                return interaction.respond([]);
+
+            const targets = attackThreadsChannel.threads.cache
+                .filter((c) => c.name.toLowerCase().includes(input.toLowerCase()))
+                .map((c) => ({ name: c.name, value: c.name }))
+                .slice(0, 25)
+
+            return interaction.respond(targets);
+    }
 });
 
 void initTargetsRepo();
