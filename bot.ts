@@ -9,6 +9,7 @@ import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modul
 import { challenges, ctfdClient, fetchAndUpdateChallenges, wrapFlagForChallenge } from './modules/challenges';
 import { initTargetsRepo, loadTargetFromSlackUrl, lock, slack, writePortsFile } from './modules/slack';
 import { formatAttackOutput, runAttacksOnLocalTarget } from './modules/attack';
+import { textEmbed } from './util/embeds';
 import { execAsync } from './util/exec';
 
 // Config
@@ -245,10 +246,7 @@ client.on('interactionCreate', async (interaction) => {
 
         case 'refresh':
             await fetchAndUpdateScoreboard();
-            const refreshEmbed = new EmbedBuilder()
-                .setDescription('Refreshed eCTF scoreboard data.')
-                .setColor('#C61130');
-            return void interaction.reply({ embeds: [refreshEmbed] });
+            return void interaction.reply({ embeds: [textEmbed('Refreshed eCTF scoreboard data.')] });
 
         case 'report':
             await broadcastDiffs(interaction);
@@ -281,28 +279,35 @@ client.on('interactionCreate', async (interaction) => {
                 .setDescription(`**Flag:** \`${flag}\`\n**Status:** ${res.status}\n**Message:** ${res.message}`)
                 .setColor('#C61130')
                 .setTimestamp();
-            return void interaction.reply({ embeds: [submitEmbed] });
+            return interaction.reply({ embeds: [submitEmbed] });
 
         case 'load':
             const url = interaction.options.getString('url', true);
             await interaction.deferReply();
 
             await loadTargetFromSlackUrl(url);
-
-            const successEmbed = new EmbedBuilder()
-                .setDescription('Loaded new target.')
-                .setColor('#C61130');
-            return void interaction.editReply({ embeds: [successEmbed] });
+            return interaction.editReply({ embeds: [textEmbed('Loaded new target.')] });
 
         case 'attack':
             const subcommand = interaction.options.getSubcommand();
 
             if (subcommand === 'target') {
                 const target = interaction.options.getString('target', true);
-                await interaction.deferReply();
 
+                const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
+                if (attackThreadsChannel?.type !== ChannelType.GuildForum)
+                    return interaction.reply({ embeds: [textEmbed(`Could not find attack forum channel.`)] });
+
+                const attackThread = attackThreadsChannel.threads.cache.find((c) => c.name === target);
+                if (!attackThread)
+                    return interaction.reply({ embeds: [textEmbed(`Could not find thread for team \`${target}\`.`)] });
+
+                // Reply with ack embed
+                await interaction.reply({ embeds: [textEmbed(`Queued automated attacks for team \`${target}\`.`)] });
+
+                // When attacks resolve, send it in the appropriate attack thread.
                 const [logs, alerts] = await runAttacksOnLocalTarget(target);
-                await interaction.editReply({
+                await attackThread.send({
                     content: formatAttackOutput(target, alerts),
                     files: [new AttachmentBuilder(Buffer.from(logs)).setName('logs.txt')]
                 });
