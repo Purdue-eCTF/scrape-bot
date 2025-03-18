@@ -50,6 +50,18 @@ const globalCommands = [
                 .setAutocomplete(true)
                 .setRequired(true)))
         .addSubcommand((c) => c
+            .setName('custom')
+            .setDescription('Run a custom attack on the specified target.')
+            .addStringOption((option) => option
+                .setName('target')
+                .setDescription('The target to attack.')
+                .setAutocomplete(true)
+                .setRequired(true))
+            .addAttachmentOption((option) => option
+                .setName('script')
+                .setDescription('The script to run.')
+                .setRequired(true)))
+        .addSubcommand((c) => c
             .setName('update')
             .setDescription('Update the IP and port for the specified target.')
             .addStringOption((option) => option

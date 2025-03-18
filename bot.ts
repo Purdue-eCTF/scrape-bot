@@ -8,7 +8,12 @@ import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor 
 import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
 import { challenges, ctfdClient, fetchAndUpdateChallenges, wrapFlagForChallenge } from './modules/challenges';
 import { initTargetsRepo, loadTargetFromSlackUrl, lock, slack, writePortsFile } from './modules/slack';
-import { formatAttackOutput, runAttacksOnLocalTarget } from './modules/attack';
+import {
+    formatAttackOutput,
+    formatCustomAttackOutput,
+    runAttacksOnLocalTarget,
+    runCustomAttackOnTarget
+} from './modules/attack';
 import { textEmbed } from './util/embeds';
 import { execAsync } from './util/exec';
 
@@ -309,6 +314,30 @@ client.on('interactionCreate', async (interaction) => {
                 const [logs, alerts] = await runAttacksOnLocalTarget(target);
                 await attackThread.send({
                     content: formatAttackOutput(target, alerts),
+                    files: [new AttachmentBuilder(Buffer.from(logs)).setName('logs.txt')]
+                });
+            } else if (subcommand === 'custom') {
+                const target = interaction.options.getString('target', true);
+
+                const script = interaction.options.getAttachment('script', true);
+                if (!script.name.endsWith('.py'))
+                    return interaction.reply({ embeds: [textEmbed(`Attack must be a valid \`.py\` file.`)] });
+
+                const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
+                if (attackThreadsChannel?.type !== ChannelType.GuildForum)
+                    return interaction.reply({ embeds: [textEmbed(`Could not find attack forum channel.`)] });
+
+                const attackThread = attackThreadsChannel.threads.cache.find((c) => c.name === target);
+                if (!attackThread)
+                    return interaction.reply({ embeds: [textEmbed(`Could not find thread for team \`${target}\`.`)] });
+
+                // Reply with ack embed
+                await interaction.reply({ embeds: [textEmbed(`Queued custom attack for team \`${target}\`.`)] });
+
+                // When attacks resolve, send it in the appropriate attack thread.
+                const [logs, alerts] = await runCustomAttackOnTarget(target, script.url);
+                await attackThread.send({
+                    content: formatCustomAttackOutput(target, alerts, interaction.user),
                     files: [new AttachmentBuilder(Buffer.from(logs)).setName('logs.txt')]
                 });
             } else if (subcommand === 'update') {
