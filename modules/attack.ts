@@ -21,7 +21,7 @@ export async function runAttacksOnLocalTarget(team: string): Promise<[string, st
         const alerts: string[] = [];
         let logs = '';
         let lineBuf = '';
-        let flagSubmissions = [];
+        let flagSubmissions: Promise<void>[] = [];
 
         attackSocket.on('data', async (d) => {
             const [curr, ...lines] = d.toString().split('\n');
