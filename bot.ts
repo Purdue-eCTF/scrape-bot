@@ -5,7 +5,7 @@ import bodyParser from 'body-parser';
 
 // Modules
 import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
-import { fetchAndUpdateScoreboard, lastUpdated, scoreboard, top5 } from './modules/scoreboard';
+import { fetchAndUpdateScoreboard, lastUpdated, scoreboard } from './modules/scoreboard';
 import { challenges, ctfdClient, fetchAndUpdateChallenges, wrapFlagForChallenge } from './modules/challenges';
 import { initTargetsRepo, loadTargetFromSlackUrl, lock, slack, writePortsFile } from './modules/slack';
 import {
@@ -237,18 +237,23 @@ client.on('interactionCreate', async (interaction) => {
 
     switch (interaction.commandName) {
         case 'scoreboard':
-            const scoreboardDesc = top5
-                .map((name) => scoreboard[name])
-                .map((data) => `${data.rank}. [${data.name}](${data.href}) — ${data.points} points`)
-                .join('\n')
+            const sortedScoreboard = Object.values(scoreboard)
+                .toSorted((a, b) => a.rank - b.rank)
 
-            const scoreboardEmbed = new EmbedBuilder()
-                .setTitle('eCTF scoreboard')
-                .setDescription(scoreboardDesc)
-                .setColor('#C61130')
-                .setFooter({ text: `Last fetched ${lastUpdated.toLocaleString()}` })
-                .setTimestamp();
-            return void interaction.reply({ embeds: [scoreboardEmbed] });
+            const scoreboardPages = chunked(sortedScoreboard, 10).map((chunk) => {
+                const desc = chunk
+                    .map((data) => `${data.rank}. [${data.name}](${data.href}) — ${data.points} points`)
+                    .join('\n')
+
+                return new EmbedBuilder()
+                    .setTitle('eCTF scoreboard')
+                    .setDescription(desc)
+                    .setColor('#C61130')
+                    .setFooter({ text: `Last fetched ${lastUpdated.toLocaleString()}` })
+                    .setTimestamp();
+            });
+
+            return paginate(interaction, scoreboardPages);
 
         case 'refresh':
             await fetchAndUpdateScoreboard();
@@ -259,11 +264,11 @@ client.on('interactionCreate', async (interaction) => {
             return;
 
         case 'challenges':
-            const sorted = challenges
+            const sortedChalls = challenges
                 .filter((c) => !c.solved_by_me && !c.name.endsWith(' - Late'))
                 .toSorted((a, b) => (b.solves - a.solves) || (b.value - a.value));
 
-            const pages = chunked(sorted, 10).map((chunk, i) => {
+            const challengesPages = chunked(sortedChalls, 10).map((chunk, i) => {
                 const desc = chunk
                     .map((c, j) => `${(i * 10) + j + 1}. **${c.name}** (${c.value} pts): solved by ${c.solves}`)
                     .join('\n');
@@ -275,7 +280,7 @@ client.on('interactionCreate', async (interaction) => {
                     .setTimestamp();
             });
 
-            return paginate(interaction, pages);
+            return paginate(interaction, challengesPages);
 
         case 'submit':
             const id = interaction.options.getInteger('challenge', true);

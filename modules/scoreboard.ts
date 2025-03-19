@@ -12,7 +12,6 @@ type TeamData = {
 }
 export const scoreboard: { [name: string]: TeamData } = {};
 export let lastUpdated: Date;
-export let top5: string[] = [];
 
 export async function fetchAndUpdateScoreboard(resetDiffs: boolean = false) {
     console.log('[SCORE] Re-fetching eCTF scoreboard');
@@ -31,7 +30,5 @@ export async function fetchAndUpdateScoreboard(resetDiffs: boolean = false) {
             prevRank: resetDiffs ? pos : (scoreboard[name]?.prevRank ?? pos),
             prevPoints: resetDiffs ? score : (scoreboard[name]?.prevPoints ?? 0)
         }
-
-        if (pos <= 5) top5[pos - 1] = name;
     }
 }
