@@ -4,7 +4,7 @@ import { AUTH_SECRET } from '../auth';
 
 // Utils
 import { trySubmitFlag } from './challenges';
-import { truncate } from '../util/strings';
+import { truncate } from '../util/misc';
 
 
 type BuildServerAttackMethod = 'attack-target' | 'attack-script';
