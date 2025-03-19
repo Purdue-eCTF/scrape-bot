@@ -14,8 +14,9 @@ import {
     runAttacksOnLocalTarget,
     runCustomAttackOnTarget
 } from './modules/attack';
-import { textEmbed } from './util/embeds';
+import { paginate, textEmbed } from './util/embeds';
 import { execAsync } from './util/exec';
+import { chunked } from './util/misc';
 
 // Config
 import { DISCORD_TOKEN } from './auth';
@@ -258,19 +259,23 @@ client.on('interactionCreate', async (interaction) => {
             return;
 
         case 'challenges':
-            const challengesDesc = challenges
+            const sorted = challenges
                 .filter((c) => !c.solved_by_me && !c.name.endsWith(' - Late'))
-                .toSorted((a, b) => (b.solves - a.solves) || (b.value - a.value))
-                .slice(0, 10)
-                .map((c, i) => `${i + 1}. **${c.name}** (${c.value} pts): solved by ${c.solves}`)
-                .join('\n');
+                .toSorted((a, b) => (b.solves - a.solves) || (b.value - a.value));
 
-            const challengesEmbed = new EmbedBuilder()
-                .setTitle('eCTF challenges')
-                .setDescription(`Top 10 remaining challenges by solves and points:\n${challengesDesc}`)
-                .setColor('#C61130')
-                .setTimestamp();
-            return void interaction.reply({ embeds: [challengesEmbed] });
+            const pages = chunked(sorted, 10).map((chunk, i) => {
+                const desc = chunk
+                    .map((c, j) => `${(i * 10) + j + 1}. **${c.name}** (${c.value} pts): solved by ${c.solves}`)
+                    .join('\n');
+
+                return new EmbedBuilder()
+                    .setTitle('eCTF challenges')
+                    .setDescription(`Remaining challenges by solves and points:\n${desc}`)
+                    .setColor('#C61130')
+                    .setTimestamp();
+            });
+
+            return paginate(interaction, pages);
 
         case 'submit':
             const id = interaction.options.getInteger('challenge', true);
