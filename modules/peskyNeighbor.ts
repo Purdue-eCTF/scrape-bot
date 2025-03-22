@@ -7,6 +7,7 @@ import { SLACK_USER_TOKEN, SLACK_USER_COOKIE } from "../auth";
 const HEADERS = {
     cookie: `d=${encodeURIComponent(SLACK_USER_COOKIE)}`,
 };
+const SLEEP = 10_000;
 
 function createSlackSocket() {
     const websocketParams = {
@@ -66,30 +67,16 @@ function listenOnce(socket: WebSocket, type: string) {
 	});
 }
 
-export async function peskyNeighbor(team: string, zipFilename: string) {
-	const client_token = `web-${Date.now()}`;
+function sleep(ms: number) {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-	const socket = createSlackSocket();
-
-	// open modal
-	const viewOpened = listenOnce(socket, "view_opened");
-	await fetchSlackEndpoint("chat.command", {
-		command: "/pesky_neighbor",
-		channel: SLACK_PRIVATE_CHANNEL_ID,
-		disp: "/pesky_neighbor",
-		team_id: SLACK_TEAM_ID,
-		client_token: client_token,
-	});
-
-	const viewOpenedResponse = await viewOpened;
-	const viewId = viewOpenedResponse.view.id;
-	socket.close();
-
+async function uploadFile(filename: string) {
 	// begin upload
-	const fileSize = (await fs.stat(zipFilename)).size;
+	const fileSize = (await fs.stat(filename)).size;
 	// I dunno what the difference is between this and files.getUploadURLExternal
 	const uploadURLResponse = await fetchSlackEndpoint("files.getUploadURL", {
-		filename: zipFilename,
+		filename,
 		length: fileSize.toString(),
 	});
 
@@ -97,7 +84,7 @@ export async function peskyNeighbor(team: string, zipFilename: string) {
 	const fileID = uploadURLResponse.file;
 
 	// upload zip file
-	const fileStream = createReadStream(zipFilename);
+	const fileStream = createReadStream(filename);
 	await fetch(uploadURL, {
 		method: "POST",
 		body: fileStream,
@@ -106,13 +93,58 @@ export async function peskyNeighbor(team: string, zipFilename: string) {
 
 	// finish upload
 	await fetchSlackEndpoint("files.completeUpload", {
-		files: JSON.stringify([{ id: fileID, title: zipFilename }]),
+		files: JSON.stringify([{ id: fileID, title: filename }]),
 	});
+
+	return fileID;
+}
+
+async function openModal(team: string, clientToken: string) {
+	const socket = createSlackSocket();
+
+	while (true) {
+		const viewOpened = listenOnce(socket, "view_opened");
+		await fetchSlackEndpoint("chat.command", {
+			command: "/pesky_neighbor",
+			channel: SLACK_PRIVATE_CHANNEL_ID,
+			disp: "/pesky_neighbor",
+			team_id: SLACK_TEAM_ID,
+			client_token: clientToken,
+		});
+
+		const view = (await viewOpened).view;
+
+		// check if team dropdown contains the team we want
+		const selectOptions = view.blocks.find((block) => block.block_id === "selectAction")
+			.elements[0].options;
+		if (selectOptions.some((option) => option.value === team)) {
+			socket.close();
+			return view.id;
+		}
+
+		await fetchSlackEndpoint("views.close", {
+			client_token: clientToken,
+			view_id: view.id,
+			root_view_id: view.root_view_id,
+		});
+
+		// rate limit
+		await sleep(SLEEP);
+	}
+}
+
+export async function peskyNeighbor(team: string, zipFilename: string) {
+	const clientToken = `web-${Date.now()}`;
+
+	const [fileID, viewId] = await Promise.all([
+		uploadFile(zipFilename),
+		openModal(team, clientToken),
+	]);
 
 	// submit modal
 	await fetchSlackEndpoint("views.submit", {
 		view_id: viewId,
-		client_token: client_token,
+		client_token: clientToken,
 		state: JSON.stringify({
 			values: {
 				file_input_block_id: {
