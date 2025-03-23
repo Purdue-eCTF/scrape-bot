@@ -4,33 +4,9 @@ import { DISCORD_TOKEN } from './auth';
 
 const globalCommands = [
     new SlashCommandBuilder()
-        .setName('scoreboard')
-        .setDescription('Sends the top teams on the eCTF scoreboard.')
-        .toJSON(),
-    new SlashCommandBuilder()
         .setName('refresh')
         .setDescription('Manually re-fetches the scoreboard data.')
         .toJSON(),
-    new SlashCommandBuilder()
-        .setName('report')
-        .setDescription('Sends the current day\'s eCTF scoreboard report.')
-        .toJSON(),
-    new SlashCommandBuilder()
-        .setName('challenges')
-        .setDescription('Gets the top 10 remaining challenges sorted by solves and points.')
-        .toJSON(),
-    new SlashCommandBuilder()
-        .setName('submit')
-        .setDescription('Automatically submits the given flag to the given challenge on CTFd.')
-        .addIntegerOption((option) => option
-            .setName('challenge')
-            .setDescription('The challenge to submit a flag for.')
-            .setAutocomplete(true)
-            .setRequired(true))
-        .addStringOption((option) => option
-            .setName('flag')
-            .setDescription('The flag to submit.')
-            .setRequired(true)),
     new SlashCommandBuilder()
         .setName('load')
         .setDescription('Loads a target from the specified Slack URL (useful if Tom crashed before pushing).')

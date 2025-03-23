@@ -5,8 +5,8 @@ import bodyParser from 'body-parser';
 
 // Modules
 import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
-import { fetchAndUpdateScoreboard, lastUpdated, scoreboard } from './modules/scoreboard';
-import { challenges, ctfdClient, fetchAndUpdateChallenges, wrapFlagForChallenge } from './modules/challenges';
+import { fetchAndUpdateScoreboard, scoreboard } from './modules/scoreboard';
+import { fetchAndUpdateChallenges } from './modules/challenges';
 import { initTargetsRepo, loadTargetFromSlackUrl, lock, slack, writePortsFile } from './modules/slack';
 import {
     formatAttackOutput,
@@ -14,9 +14,8 @@ import {
     runAttacksOnLocalTarget,
     runCustomAttackOnTarget
 } from './modules/attack';
-import { paginate, textEmbed } from './util/embeds';
+import { textEmbed } from './util/embeds';
 import { execAsync } from './util/exec';
-import { chunked } from './util/misc';
 
 // Config
 import { DISCORD_TOKEN } from './auth';
@@ -47,7 +46,7 @@ const client = new Client({
 
 let broadcastDiffsJob: CronJob;
 
-async function broadcastDiffs(interaction?: CommandInteraction) {
+export async function broadcastDiffs(interaction?: CommandInteraction) {
     const totalDiffs: string[] = [];
 
     for (const team of Object.values(scoreboard)) {
@@ -236,65 +235,10 @@ client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
     switch (interaction.commandName) {
-        case 'scoreboard':
-            const sortedScoreboard = Object.values(scoreboard)
-                .toSorted((a, b) => a.rank - b.rank)
-
-            const scoreboardPages = chunked(sortedScoreboard, 10).map((chunk) => {
-                const desc = chunk
-                    .map((data) => `${data.rank}. [${data.name}](${data.href}) — ${data.points} points`)
-                    .join('\n')
-
-                return new EmbedBuilder()
-                    .setTitle('eCTF scoreboard')
-                    .setDescription(desc)
-                    .setColor('#C61130')
-                    .setFooter({ text: `Last fetched ${lastUpdated.toLocaleString()}` })
-                    .setTimestamp();
-            });
-
-            return paginate(interaction, scoreboardPages);
 
         case 'refresh':
             await fetchAndUpdateScoreboard();
             return void interaction.reply({ embeds: [textEmbed('Refreshed eCTF scoreboard data.')] });
-
-        case 'report':
-            await broadcastDiffs(interaction);
-            return;
-
-        case 'challenges':
-            const sortedChalls = challenges
-                .filter((c) => !c.solved_by_me && !c.name.endsWith(' - Late'))
-                .toSorted((a, b) => (b.solves - a.solves) || (b.value - a.value));
-
-            const challengesPages = chunked(sortedChalls, 10).map((chunk, i) => {
-                const desc = chunk
-                    .map((c, j) => `${(i * 10) + j + 1}. **${c.name}** (${c.value} pts): solved by ${c.solves}`)
-                    .join('\n');
-
-                return new EmbedBuilder()
-                    .setTitle('eCTF challenges')
-                    .setDescription(`Remaining challenges by solves and points:\n${desc}`)
-                    .setColor('#C61130')
-                    .setTimestamp();
-            });
-
-            return paginate(interaction, challengesPages);
-
-        case 'submit':
-            const id = interaction.options.getInteger('challenge', true);
-            const challName = challenges.find((c) => c.id === id)!.name;
-
-            const flag = wrapFlagForChallenge(challName, interaction.options.getString('flag', true));
-            const res = await ctfdClient.submitFlag(id, flag);
-
-            const submitEmbed = new EmbedBuilder()
-                .setTitle(`Flag submission for \`${challName}\``)
-                .setDescription(`**Flag:** \`${flag}\`\n**Status:** ${res.status}\n**Message:** ${res.message}`)
-                .setColor('#C61130')
-                .setTimestamp();
-            return interaction.reply({ embeds: [submitEmbed] });
 
         case 'load':
             const url = interaction.options.getString('url', true);
@@ -375,16 +319,10 @@ client.on('interactionCreate', async (interaction) => {
 
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isAutocomplete()) return;
-    const input = interaction.options.getFocused();
 
     switch (interaction.commandName) {
         case 'submit':
-            const challs = challenges
-                .filter(((c) => !c.solved_by_me && c.name.toLowerCase().includes(input.toLowerCase())))
-                .map((c) => ({ name: c.name, value: c.id }))
-                .slice(0, 25)
 
-            return interaction.respond(challs);
 
         case 'attack':
             // TODO: switch on subcommand?
