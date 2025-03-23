@@ -4,7 +4,7 @@
   "description": "Scrapes the eCTF scoreboard for rank changes.",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node bot.ts",
+    "start": "ts-node index.ts",
     "registerSlashCommands": "ts-node registerSlashCommands.ts"
   },
   "author": "ky28059",

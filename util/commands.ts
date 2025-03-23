@@ -35,11 +35,15 @@ export async function getAllCommands() {
         if (file.isDirectory()) {
             const commandFiles = await readdir(`./commands/${file.name}`);
 
-            const groupData = new SlashCommandBuilder().setName(file.name)
+            const groupData = new SlashCommandBuilder()
+                .setName(file.name)
+                .setDescription(`[${file.name}] command group`)
             const commands: { [key: string]: Subcommand } = {};
 
+            // Hack: `fs` paths are relative to the currently running file, while `import` paths are relative
+            // to *this* file.
             for (const name of commandFiles) {
-                const command = (await import(`./commands/${file.name}/${name}`)).default as Subcommand;
+                const command = (await import(`../commands/${file.name}/${name.slice(0, -3)}`)).default as Subcommand;
                 commands[name] = command;
                 groupData.addSubcommand(command.data)
             }
@@ -48,7 +52,7 @@ export async function getAllCommands() {
             continue;
         }
 
-        const command = (await import(`./commands/${file.name}`)).default as Command;
+        const command = (await import(`../commands/${file.name.slice(0, -3)}`)).default as Command;
         ret.push(command);
     }
 

@@ -13,16 +13,12 @@ import bodyParser from 'body-parser';
 // Modules
 import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
 import { fetchAndUpdateScoreboard, scoreboard } from './modules/scoreboard';
-import { fetchAndUpdateChallenges } from './modules/challenges';
-import { initTargetsRepo, slack } from './modules/slack';
-import { Command, CommandGroup } from './util/commands';
+import { Command, CommandGroup, getAllCommands } from './util/commands';
 
 // Config
-import { DISCORD_TOKEN } from './auth';
 import {
     ATTACK_FORUM_CHANNEL_ID,
     ATTACK_NOTIFY_CHANNEL_ID,
-    BOLT_PORT,
     DESIGN_REPO_URL,
     EXPRESS_PORT,
     FAILURE_CHANNEL_ID,
@@ -38,7 +34,7 @@ declare module 'discord.js' {
     }
 }
 
-const client = new Client({
+export const client = new Client({
     intents: [
         "Guilds",
         "GuildMessages",
@@ -222,6 +218,14 @@ server.listen(EXPRESS_PORT, () => {
 });
 
 client.once('ready', async () => {
+    client.commands = new Collection();
+
+    const commands = await getAllCommands();
+    for (const command of commands) {
+        console.log(`[DISC] Loaded /${command.data.name}`);
+        client.commands.set(command.data.name, command);
+    }
+
     console.log(`[DISC] Logged in as ${client.user?.tag}!`);
 
     // Broadcast diffs daily
@@ -272,14 +276,3 @@ client.on('interactionCreate', async (interaction) => {
         // TODO ...
     }
 });
-
-void initTargetsRepo();
-
-void fetchAndUpdateScoreboard(true);
-setInterval(fetchAndUpdateScoreboard, 1000 * 60);
-
-void fetchAndUpdateChallenges();
-setInterval(fetchAndUpdateChallenges, 1000 * 60);
-
-void client.login(DISCORD_TOKEN);
-void slack.start(BOLT_PORT);
