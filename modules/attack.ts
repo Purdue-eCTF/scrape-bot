@@ -42,8 +42,10 @@ export async function runAttacksOnLocalTarget(team: string): Promise<[string, st
                 // Flush the current line
                 logs += lineBuf + '\n';
 
-                if (lineBuf.startsWith('%*&'))
+                if (lineBuf.startsWith('%*&')) {
+                    attackSocket.destroy();
                     return res([logs, alerts]);
+                }
 
                 const flag = lineBuf.match(/ectf\{.+?}/)?.[0];
                 if (flag) {
