@@ -141,6 +141,7 @@ export async function updateInfoForTeam(name: string, ip: string, portLow: numbe
 }
 
 client.once('ready', async () => {
+    // Load commands
     client.commands = new Collection();
 
     const commands = await getAllCommands();

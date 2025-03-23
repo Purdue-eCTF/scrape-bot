@@ -42,8 +42,10 @@ export async function getAllCommands() {
 
             // Hack: `fs` paths are relative to the currently running file, while `import` paths are relative
             // to *this* file.
-            for (const name of commandFiles) {
-                const command = (await import(`../commands/${file.name}/${name.slice(0, -3)}`)).default as Subcommand;
+            for (const raw of commandFiles) {
+                const name = raw.slice(0, -3);
+                const command = (await import(`../commands/${file.name}/${name}`)).default as Subcommand;
+
                 commands[name] = command;
                 groupData.addSubcommand(command.data)
             }
