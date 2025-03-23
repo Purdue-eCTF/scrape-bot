@@ -1,4 +1,11 @@
-import { ActivityType, AttachmentBuilder, ChannelType, Client, CommandInteraction, EmbedBuilder } from 'discord.js';
+import {
+    ActivityType,
+    ChannelType,
+    Client,
+    Collection,
+    CommandInteraction,
+    EmbedBuilder
+} from 'discord.js';
 import { CronJob } from 'cron';
 import express from 'express';
 import bodyParser from 'body-parser';
@@ -7,15 +14,8 @@ import bodyParser from 'body-parser';
 import { BuildStatusUpdateReq, formatCommitShort, formatPiStatus, statusToColor } from './modules/status';
 import { fetchAndUpdateScoreboard, scoreboard } from './modules/scoreboard';
 import { fetchAndUpdateChallenges } from './modules/challenges';
-import { initTargetsRepo, loadTargetFromSlackUrl, lock, slack, writePortsFile } from './modules/slack';
-import {
-    formatAttackOutput,
-    formatCustomAttackOutput,
-    runAttacksOnLocalTarget,
-    runCustomAttackOnTarget
-} from './modules/attack';
-import { textEmbed } from './util/embeds';
-import { execAsync } from './util/exec';
+import { initTargetsRepo, slack } from './modules/slack';
+import { Command, CommandGroup } from './util/commands';
 
 // Config
 import { DISCORD_TOKEN } from './auth';
@@ -31,6 +31,12 @@ import {
     STATUS_MESSAGE_ID
 } from './config';
 
+
+declare module 'discord.js' {
+    interface Client {
+        commands: Collection<string, Command | CommandGroup>;
+    }
+}
 
 const client = new Client({
     intents: [
@@ -234,109 +240,36 @@ client.once('ready', async () => {
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
-    switch (interaction.commandName) {
+    const raw = client.commands.get(interaction.commandName);
+    if (!raw) return;
 
-        case 'refresh':
-            await fetchAndUpdateScoreboard();
-            return void interaction.reply({ embeds: [textEmbed('Refreshed eCTF scoreboard data.')] });
+    const command = 'commands' in raw
+        ? raw.commands[interaction.options.getSubcommand()]
+        : raw
+    if (!command) return;
 
-        case 'load':
-            const url = interaction.options.getString('url', true);
-            await interaction.deferReply();
-
-            await loadTargetFromSlackUrl(url);
-            return interaction.editReply({ embeds: [textEmbed('Loaded new target.')] });
-
-        case 'attack':
-            const subcommand = interaction.options.getSubcommand();
-
-            if (subcommand === 'target') {
-                const target = interaction.options.getString('target', true);
-
-                const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
-                if (attackThreadsChannel?.type !== ChannelType.GuildForum)
-                    return interaction.reply({ embeds: [textEmbed(`Could not find attack forum channel.`)] });
-
-                const attackThread = attackThreadsChannel.threads.cache.find((c) => c.name === target);
-                if (!attackThread)
-                    return interaction.reply({ embeds: [textEmbed(`Could not find thread for team \`${target}\`.`)] });
-
-                // Reply with ack embed
-                await interaction.reply({ embeds: [textEmbed(`Queued automated attacks for team \`${target}\`.`)] });
-
-                // When attacks resolve, send it in the appropriate attack thread.
-                const [logs, alerts] = await runAttacksOnLocalTarget(target);
-                await attackThread.send({
-                    content: formatAttackOutput(target, alerts),
-                    files: [new AttachmentBuilder(Buffer.from(logs)).setName('logs.txt')]
-                });
-            } else if (subcommand === 'custom') {
-                const target = interaction.options.getString('target', true);
-
-                const script = interaction.options.getAttachment('script', true);
-                if (!script.name.endsWith('.py'))
-                    return interaction.reply({ embeds: [textEmbed(`Attack must be a valid \`.py\` file.`)] });
-
-                const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
-                if (attackThreadsChannel?.type !== ChannelType.GuildForum)
-                    return interaction.reply({ embeds: [textEmbed(`Could not find attack forum channel.`)] });
-
-                const attackThread = attackThreadsChannel.threads.cache.find((c) => c.name === target);
-                if (!attackThread)
-                    return interaction.reply({ embeds: [textEmbed(`Could not find thread for team \`${target}\`.`)] });
-
-                // Reply with ack embed
-                await interaction.reply({ embeds: [textEmbed(`Queued custom attack for team \`${target}\`.`)] });
-
-                // When attacks resolve, send it in the appropriate attack thread.
-                const [logs, alerts] = await runCustomAttackOnTarget(target, script.url);
-                await attackThread.send({
-                    content: formatCustomAttackOutput(target, alerts, interaction.user),
-                    files: [new AttachmentBuilder(Buffer.from(logs)).setName('logs.txt')]
-                });
-            } else if (subcommand === 'update') {
-                const target = interaction.options.getString('target', true);
-                const ip = interaction.options.getString('ip', true);
-                const portLow = interaction.options.getInteger('port_low', true);
-                const portHigh = interaction.options.getInteger('port_high', true);
-
-                await updateInfoForTeam(target, ip, portLow, portHigh);
-
-                await writePortsFile(target, ip, portLow, portHigh);
-                await lock.acquire('git', async () => {
-                    await execAsync(`cd temp && git pull --ff-only && git add "${target}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Update ports for ${target}" && git push`);
-                });
-
-                const successEmbed = new EmbedBuilder()
-                    .setDescription('Successfully updated target info.')
-                    .setColor('#C61130')
-                await interaction.reply({ embeds: [successEmbed] });
-            }
-
-            break;
+    try {
+        await command.execute(interaction);
+    } catch {
+        // TODO ...
     }
 });
 
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isAutocomplete()) return;
 
-    switch (interaction.commandName) {
-        case 'submit':
+    const raw = client.commands.get(interaction.commandName);
+    if (!raw) return;
 
+    const command = 'commands' in raw
+        ? raw.commands[interaction.options.getSubcommand()]
+        : raw
+    if (!command?.autocomplete) return;
 
-        case 'attack':
-            // TODO: switch on subcommand?
-
-            const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
-            if (attackThreadsChannel?.type !== ChannelType.GuildForum)
-                return interaction.respond([]);
-
-            const targets = attackThreadsChannel.threads.cache
-                .filter((c) => c.name.toLowerCase().includes(input.toLowerCase()))
-                .map((c) => ({ name: c.name, value: c.name }))
-                .slice(0, 25)
-
-            return interaction.respond(targets);
+    try {
+        await command.autocomplete(interaction);
+    } catch {
+        // TODO ...
     }
 });
 

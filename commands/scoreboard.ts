@@ -13,10 +13,10 @@ export default {
         .setDescription('Sends the top teams on the eCTF scoreboard.'),
 
     async execute(interaction) {
-        const sortedScoreboard = Object.values(scoreboard)
+        const sorted = Object.values(scoreboard)
             .toSorted((a, b) => a.rank - b.rank)
 
-        const scoreboardPages = chunked(sortedScoreboard, 10).map((chunk) => {
+        const pages = chunked(sorted, 10).map((chunk) => {
             const desc = chunk
                 .map((data) => `${data.rank}. [${data.name}](${data.href}) — ${data.points} points`)
                 .join('\n')
@@ -29,6 +29,6 @@ export default {
                 .setTimestamp();
         });
 
-        return paginate(interaction, scoreboardPages);
+        return paginate(interaction, pages);
     }
 } satisfies Command;

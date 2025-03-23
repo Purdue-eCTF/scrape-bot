@@ -13,11 +13,11 @@ export default {
         .setDescription('Gets the remaining challenges sorted by solves and points.'),
 
     async execute(interaction) {
-        const sortedChalls = challenges
+        const sorted = challenges
             .filter((c) => !c.solved_by_me && !c.name.endsWith(' - Late'))
             .toSorted((a, b) => (b.solves - a.solves) || (b.value - a.value));
 
-        const challengesPages = chunked(sortedChalls, 10).map((chunk, i) => {
+        const pages = chunked(sorted, 10).map((chunk, i) => {
             const desc = chunk
                 .map((c, j) => `${(i * 10) + j + 1}. **${c.name}** (${c.value} pts): solved by ${c.solves}`)
                 .join('\n');
@@ -29,6 +29,6 @@ export default {
                 .setTimestamp();
         });
 
-        return paginate(interaction, challengesPages);
+        return paginate(interaction, pages);
     }
 } satisfies Command;
