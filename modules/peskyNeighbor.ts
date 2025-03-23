@@ -1,13 +1,37 @@
-import { WebSocket } from "ws";
+import { WebSocket, RawData } from "ws";
 import fs from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import { SLACK_PRIVATE_CHANNEL_ID, SLACK_TEAM_ID, SLACK_GATEWAY_SERVER } from "../config";
 import { SLACK_USER_TOKEN, SLACK_USER_COOKIE } from "../auth";
+import { ViewOutput } from "@slack/bolt";
+import { WebAPICallResult } from "@slack/web-api";
+import { ActionsBlock, StaticSelect } from "@slack/types";
+import { WebClient } from "@slack/web-api";
 
 const HEADERS = {
     cookie: `d=${encodeURIComponent(SLACK_USER_COOKIE)}`,
 };
 const SLEEP = 10_000;
+const webClient = new WebClient(SLACK_USER_TOKEN, { headers: HEADERS });
+
+// Slack API types
+type FilesGetUploadUrlResponse = WebAPICallResult & {
+    ok: true;
+    upload_url: string;
+    file: string;
+};
+
+// Slack WebSocket types
+type WebSocketMessage = {
+    type: string;
+};
+
+type ViewOpenedMessage = WebSocketMessage & {
+    type: "view_opened";
+    view_type: string;
+    view_id: string;
+    view: ViewOutput;
+};
 
 function createSlackSocket() {
     const websocketParams = {
@@ -33,31 +57,13 @@ function createSlackSocket() {
     return socket;
 }
 
-async function fetchSlackEndpoint(
-	command: string,
-	params: Record<string, string | readonly string[]>
-) {
-	let body = new FormData();
-	body.append("token", SLACK_USER_TOKEN);
-	let resp = await fetch(`https://slack.com/api/${command}?${new URLSearchParams(params)}`, {
-		headers: HEADERS,
-		body,
-		method: "POST",
-	}).then((resp) => resp.json());
-
-	if (!resp.ok) {
-		throw new Error(
-			`Fetching ${command} with ${JSON.stringify(params)} resulted in error: ${resp.error}`
-		);
-	}
-
-	return resp;
-}
-
-function listenOnce(socket: WebSocket, type: string) {
+function listenOnce<Message extends WebSocketMessage>(
+    socket: WebSocket,
+    type: string
+): Promise<Message> {
 	return new Promise((resolve, reject) => {
-		function callback(event) {
-			let data = JSON.parse(event.toString());
+		function callback(msg: RawData) {
+			let data = JSON.parse(msg.toString()) as Message;
 			if (data.type === type) {
 				resolve(data);
 				socket.removeListener("message", callback);
@@ -75,10 +81,13 @@ async function uploadFile(filename: string) {
 	// begin upload
 	const fileSize = (await fs.stat(filename)).size;
 	// I dunno what the difference is between this and files.getUploadURLExternal
-	const uploadURLResponse = await fetchSlackEndpoint("files.getUploadURL", {
-		filename,
-		length: fileSize.toString(),
-	});
+	const uploadURLResponse: FilesGetUploadUrlResponse = (await webClient.apiCall(
+		"files.getUploadURL",
+		{
+			filename,
+			length: fileSize.toString(),
+		}
+	)) as FilesGetUploadUrlResponse;
 
 	const uploadURL = uploadURLResponse.upload_url;
 	const fileID = uploadURLResponse.file;
@@ -92,7 +101,7 @@ async function uploadFile(filename: string) {
 	});
 
 	// finish upload
-	await fetchSlackEndpoint("files.completeUpload", {
+	await webClient.apiCall("files.completeUpload", {
 		files: JSON.stringify([{ id: fileID, title: filename }]),
 	});
 
@@ -103,8 +112,8 @@ async function openModal(team: string, clientToken: string) {
 	const socket = createSlackSocket();
 
 	while (true) {
-		const viewOpened = listenOnce(socket, "view_opened");
-		await fetchSlackEndpoint("chat.command", {
+		const viewOpened: Promise<ViewOpenedMessage> = listenOnce(socket, "view_opened");
+		await webClient.apiCall("chat.command", {
 			command: "/pesky_neighbor",
 			channel: SLACK_PRIVATE_CHANNEL_ID,
 			disp: "/pesky_neighbor",
@@ -115,17 +124,28 @@ async function openModal(team: string, clientToken: string) {
 		const view = (await viewOpened).view;
 
 		// check if team dropdown contains the team we want
-		const selectOptions = view.blocks.find((block) => block.block_id === "selectAction")
-			.elements[0].options;
-		if (selectOptions.some((option) => option.value === team)) {
+		const selectBlock = view.blocks.find((block) => block.block_id === "selectAction") as
+			| ActionsBlock
+			| undefined;
+		if (selectBlock === undefined) {
+			console.error("Could not find select block  in ", JSON.stringify(view));
+			continue;
+		}
+
+		const select = selectBlock.elements[0] as StaticSelect | undefined;
+		if (select === undefined) {
+			console.error("Could not find select in ", JSON.stringify(view));
+			continue;
+		}
+		if (select.options?.some((option) => option.value === team)) {
 			socket.close();
 			return view.id;
 		}
 
-		await fetchSlackEndpoint("views.close", {
+		await webClient.apiCall("views.close", {
 			client_token: clientToken,
 			view_id: view.id,
-			root_view_id: view.root_view_id,
+			root_view_id: view.root_view_id ?? view.id,
 		});
 
 		// rate limit
@@ -142,7 +162,7 @@ export async function peskyNeighbor(team: string, zipFilename: string) {
 	]);
 
 	// submit modal
-	await fetchSlackEndpoint("views.submit", {
+	await webClient.apiCall("views.submit", {
 		view_id: viewId,
 		client_token: clientToken,
 		state: JSON.stringify({
