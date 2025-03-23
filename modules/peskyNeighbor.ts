@@ -10,11 +10,13 @@ import { WebClient } from "@slack/web-api";
 import AdmZip from "adm-zip";
 import { createConnection } from "node:net";
 import { readLines } from "../util/socket";
+import { sleep } from "../util/misc";
 
 const HEADERS = {
     cookie: `d=${encodeURIComponent(SLACK_USER_COOKIE)}`,
 };
 const SLEEP = 10_000;
+const MIN_FRAMES = 2; // minimum number of frames to capture
 const webClient = new WebClient(SLACK_USER_TOKEN, { headers: HEADERS });
 
 // Slack API types
@@ -29,6 +31,7 @@ type WebSocketMessage = {
     type: string;
 };
 
+// incomplete
 type ViewOpenedMessage = WebSocketMessage & {
     type: "view_opened";
     view_type: string;
@@ -67,13 +70,10 @@ function createSlackSocket() {
     return socket;
 }
 
-function listenOnce<Message extends WebSocketMessage>(
-    socket: WebSocket,
-    type: string
-): Promise<Message> {
+function listenOnce(socket: WebSocket, type: string): Promise<WebSocketMessage> {
     return new Promise((resolve, reject) => {
         function callback(msg: RawData) {
-            const data = JSON.parse(msg.toString()) as Message;
+            const data = JSON.parse(msg.toString()) as WebSocketMessage;
             if (data.type === type) {
                 resolve(data);
                 socket.removeListener("message", callback);
@@ -83,19 +83,14 @@ function listenOnce<Message extends WebSocketMessage>(
     });
 }
 
-function sleep(ms: number) {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 async function uploadFile(filename: string, file: Buffer) {
     // begin upload
-    const fileSize = file.length;
     // I dunno what the difference is between this and files.getUploadURLExternal
     const uploadURLResponse: FilesGetUploadUrlResponse = (await webClient.apiCall(
         "files.getUploadURL",
         {
             filename,
-            length: fileSize,
+            length: file.length,
         }
     )) as FilesGetUploadUrlResponse;
 
@@ -121,7 +116,7 @@ async function openModal(team: string, clientToken: string): Promise<[string, Pl
     const socket = createSlackSocket();
 
     while (true) {
-        const viewOpened: Promise<ViewOpenedMessage> = listenOnce(socket, "view_opened");
+        const viewOpened = listenOnce(socket, "view_opened") as Promise<ViewOpenedMessage>;
         await webClient.apiCall("chat.command", {
             command: "/pesky_neighbor",
             channel: SLACK_PRIVATE_CHANNEL_ID,
@@ -147,6 +142,7 @@ async function openModal(team: string, clientToken: string): Promise<[string, Pl
             continue;
         }
 
+        // handles provided team name not matching actual team name's casing
         const option = select.options?.find(
             (option) => option.value?.toUpperCase() === team.toUpperCase()
         );
@@ -181,9 +177,11 @@ function captureFrames(ip: string, ports: number[]) {
                 if (newFrame.channel == channel) {
                     frames.push(newFrame);
                 }
-                if (frames.length >= 2) {
+
+                if (frames.length >= MIN_FRAMES) {
                     done[channel] = true;
                 }
+
                 if (done.every((x) => x)) {
                     // all channels are done capturing
                     resolve(frames);
@@ -196,19 +194,22 @@ function captureFrames(ip: string, ports: number[]) {
 
     return Promise.all(Array.from(ports.keys()).map(capture));
 }
+
 async function createPeskyNeighborZip(team: string) {
-    const zip = new AdmZip();
     const [ip, ...portStrs] = (await fs.readFile(`./temp/${team}/ports.txt`))
         .toString()
         .trim()
         .split(" ");
     const ports = portStrs.map((x) => parseInt(x, 10));
     const frames = await captureFrames(ip, ports);
+
+    const zip = new AdmZip();
     zip.addLocalFile("./modules/pesky_neighbor.py", "", "pesky_neighbor.py");
     zip.addFile("frames.json", Buffer.from(JSON.stringify(frames)));
 
     return await zip.toBufferPromise();
 }
+
 export async function peskyNeighbor(team: string) {
     const clientToken = `web-${Date.now()}`;
 
