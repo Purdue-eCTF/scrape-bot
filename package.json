@@ -4,7 +4,7 @@
   "description": "Scrapes the eCTF scoreboard for rank changes.",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node bot.ts",
+    "start": "ts-node index.ts",
     "registerSlashCommands": "ts-node registerSlashCommands.ts"
   },
   "author": "ky28059",
@@ -17,7 +17,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@b01lers/ctfd-api": "^1.2.0",
+    "@b01lers/ctfd-api": "^1.2.1",
     "@slack/bolt": "^4.2.1",
     "adm-zip": "^0.5.12",
     "async-lock": "^1.4.1",
