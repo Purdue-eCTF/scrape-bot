@@ -1,16 +1,22 @@
-import { WebSocket, RawData } from "ws";
-import fs from "node:fs/promises";
-import { createReadStream } from "node:fs";
-import { SLACK_PRIVATE_CHANNEL_ID, SLACK_TEAM_ID, SLACK_GATEWAY_SERVER } from "../config";
-import { SLACK_USER_TOKEN, SLACK_USER_COOKIE } from "../auth";
-import { ViewOutput } from "@slack/bolt";
-import { WebAPICallResult } from "@slack/web-api";
-import { ActionsBlock, PlainTextOption, StaticSelect } from "@slack/types";
-import { WebClient } from "@slack/web-api";
-import AdmZip from "adm-zip";
-import { createConnection } from "node:net";
-import { readLines } from "../util/socket";
-import { sleep } from "../util/misc";
+import { readFile } from 'node:fs/promises';
+import { createConnection } from 'node:net';
+import { WebSocket, RawData } from 'ws';
+import { WebClient } from '@slack/web-api';
+import AdmZip from 'adm-zip';
+
+// Types
+import type { ViewOutput } from '@slack/bolt';
+import type { WebAPICallResult } from '@slack/web-api';
+import type { ActionsBlock, PlainTextOption } from '@slack/types';
+
+// Utils
+import { readLines } from '../util/socket';
+import { sleep } from '../util/misc';
+
+// Config
+import { SLACK_PRIVATE_CHANNEL_ID, SLACK_TEAM_ID, SLACK_GATEWAY_SERVER } from '../config';
+import { SLACK_USER_TOKEN, SLACK_USER_COOKIE } from '../auth';
+
 
 const HEADERS = {
     cookie: `d=${encodeURIComponent(SLACK_USER_COOKIE)}`,
@@ -21,90 +27,86 @@ const webClient = new WebClient(SLACK_USER_TOKEN, { headers: HEADERS });
 
 // Slack API types
 type FilesGetUploadUrlResponse = WebAPICallResult & {
-    ok: true;
-    upload_url: string;
-    file: string;
+    ok: true,
+    upload_url: string,
+    file: string
 };
 
 // Slack WebSocket types
-type WebSocketMessage = {
-    type: string;
-};
+type BaseWebSocketMessage = ViewOpenedMessage | {
+    type: '...' // TODO
+}
 
 // incomplete
-type ViewOpenedMessage = WebSocketMessage & {
-    type: "view_opened";
-    view_type: string;
-    view_id: string;
-    view: ViewOutput;
+type ViewOpenedMessage = {
+    type: 'view_opened',
+    view_type: string,
+    view_id: string,
+    view: ViewOutput
 };
 
 // Satellite frame type
 type CapturedFrame = {
-    channel: number;
-    timestamp: number;
-    encoded: string;
+    channel: number,
+    timestamp: number,
+    encoded: string
 };
 
 function createSlackSocket() {
     const websocketParams = {
         token: SLACK_USER_TOKEN,
-        sync_desync: "1",
-        slack_client: "desktop",
-        start_args:
-            "?agent=client&org_wide_aware=true&agent_version=1742590350&eac_cache_ts=true&cache_ts=0&name_tagging=true&only_self_subteams=true&connect_only=true&ms_latest=true",
-        no_query_on_subscribe: "1",
-        flannel: "3",
-        lazy_channels: "1",
+        sync_desync: '1',
+        slack_client: 'desktop',
+        start_args: '?agent=client&org_wide_aware=true&agent_version=1742590350&eac_cache_ts=true&cache_ts=0&name_tagging=true&only_self_subteams=true&connect_only=true&ms_latest=true',
+        no_query_on_subscribe: '1',
+        flannel: '3',
+        lazy_channels: '1',
         gateway_server: SLACK_GATEWAY_SERVER,
-        batch_presence_aware: "1",
+        batch_presence_aware: '1',
     };
-    const socket = new WebSocket(
-        `wss://wss-primary.slack.com/?${new URLSearchParams(websocketParams)}`,
-        {
-            origin: "https://app.slack.com",
-            headers: HEADERS,
-        }
-    );
+    const socket = new WebSocket(`wss://wss-primary.slack.com/?${new URLSearchParams(websocketParams)}`, {
+        origin: 'https://app.slack.com',
+        headers: HEADERS,
+    });
 
     return socket;
 }
 
-function listenOnce(socket: WebSocket, type: string): Promise<WebSocketMessage> {
+function listenOnce<T extends BaseWebSocketMessage['type']>(
+    socket: WebSocket,
+    type: T
+): Promise<Extract<BaseWebSocketMessage, { type: T }>> {
     return new Promise((resolve, reject) => {
         function callback(msg: RawData) {
-            const data = JSON.parse(msg.toString()) as WebSocketMessage;
+            const data = JSON.parse(msg.toString());
             if (data.type === type) {
                 resolve(data);
-                socket.removeListener("message", callback);
+                socket.removeListener('message', callback);
             }
         }
-        socket.on("message", callback);
+        socket.on('message', callback);
     });
 }
 
 async function uploadFile(filename: string, file: Buffer) {
     // begin upload
     // I dunno what the difference is between this and files.getUploadURLExternal
-    const uploadURLResponse: FilesGetUploadUrlResponse = (await webClient.apiCall(
-        "files.getUploadURL",
-        {
-            filename,
-            length: file.length,
-        }
-    )) as FilesGetUploadUrlResponse;
+    const uploadURLResponse = await webClient.apiCall('files.getUploadURL', {
+        filename,
+        length: file.length
+    }) as FilesGetUploadUrlResponse;
 
     const uploadURL = uploadURLResponse.upload_url;
     const fileID = uploadURLResponse.file;
 
     // upload zip file
     await fetch(uploadURL, {
-        method: "POST",
+        method: 'POST',
         body: file,
     });
 
     // finish upload
-    await webClient.apiCall("files.completeUpload", {
+    await webClient.apiCall('files.completeUpload', {
         files: JSON.stringify([{ id: fileID, title: filename }]),
     });
 
@@ -116,11 +118,11 @@ async function openModal(team: string, clientToken: string): Promise<[string, Pl
     const socket = createSlackSocket();
 
     while (true) {
-        const viewOpened = listenOnce(socket, "view_opened") as Promise<ViewOpenedMessage>;
-        await webClient.apiCall("chat.command", {
-            command: "/pesky_neighbor",
+        const viewOpened = listenOnce(socket, 'view_opened');
+        await webClient.apiCall('chat.command', {
+            command: '/pesky_neighbor',
             channel: SLACK_PRIVATE_CHANNEL_ID,
-            disp: "/pesky_neighbor",
+            disp: '/pesky_neighbor',
             team_id: SLACK_TEAM_ID,
             client_token: clientToken,
         });
@@ -128,30 +130,26 @@ async function openModal(team: string, clientToken: string): Promise<[string, Pl
         const view = (await viewOpened).view;
 
         // check if team dropdown contains the team we want
-        const selectBlock = view.blocks.find((block) => block.block_id === "selectAction") as
-            | ActionsBlock
-            | undefined;
-        if (selectBlock === undefined) {
-            console.error("Could not find select block  in ", JSON.stringify(view));
+        const selectBlock = view.blocks.find((block) => block.block_id === 'selectAction');
+        if (selectBlock?.type !== 'actions') {
+            console.error('Could not find select block in ', JSON.stringify(view));
             continue;
         }
 
-        const select = selectBlock.elements[0] as StaticSelect | undefined;
-        if (select === undefined) {
-            console.error("Could not find select in ", JSON.stringify(view));
+        const select = (selectBlock as ActionsBlock).elements[0];
+        if (select?.type !== 'static_select') {
+            console.error('Could not find select in ', JSON.stringify(view));
             continue;
         }
 
         // handles provided team name not matching actual team name's casing
-        const option = select.options?.find(
-            (option) => option.value?.toUpperCase() === team.toUpperCase()
-        );
+        const option = select.options?.find((option) => option.value?.toUpperCase() === team.toUpperCase());
         if (option !== undefined) {
             socket.close();
             return [view.id, option];
         }
 
-        await webClient.apiCall("views.close", {
+        await webClient.apiCall('views.close', {
             client_token: clientToken,
             view_id: view.id,
             root_view_id: view.root_view_id ?? view.id,
@@ -163,7 +161,7 @@ async function openModal(team: string, clientToken: string): Promise<[string, Pl
 }
 
 function captureFrames(ip: string, ports: number[]) {
-    const done: boolean[] = Array(ports.length).fill(false);
+    const done = Array<boolean>(ports.length).fill(false);
     function capture(channel: number) {
         return new Promise((resolve, reject) => {
             const socket = createConnection({
@@ -192,22 +190,22 @@ function captureFrames(ip: string, ports: number[]) {
         });
     }
 
-    return Promise.all(Array.from(ports.keys()).map(capture));
+    return Promise.all([...ports.keys()].map(capture));
 }
 
 async function createPeskyNeighborZip(team: string) {
-    const [ip, ...portStrs] = (await fs.readFile(`./temp/${team}/ports.txt`))
+    const [ip, ...portStrs] = (await readFile(`./temp/${team}/ports.txt`))
         .toString()
         .trim()
-        .split(" ");
-    const ports = portStrs.map((x) => parseInt(x, 10));
+        .split(' ');
+    const ports = portStrs.map((x) => Number(x));
     const frames = await captureFrames(ip, ports);
 
     const zip = new AdmZip();
-    zip.addLocalFile("./modules/pesky_neighbor.py", "", "pesky_neighbor.py");
-    zip.addFile("frames.json", Buffer.from(JSON.stringify(frames)));
+    zip.addLocalFile('./modules/pesky_neighbor.py', '', 'pesky_neighbor.py');
+    zip.addFile('frames.json', Buffer.from(JSON.stringify(frames)));
 
-    return await zip.toBufferPromise();
+    return zip.toBufferPromise();
 }
 
 export async function peskyNeighbor(team: string) {
@@ -219,20 +217,20 @@ export async function peskyNeighbor(team: string) {
     ]);
 
     // submit modal
-    await webClient.apiCall("views.submit", {
+    await webClient.apiCall('views.submit', {
         view_id: viewId,
         client_token: clientToken,
         state: JSON.stringify({
             values: {
                 file_input_block_id: {
                     file_input_for_pesky_neighbor: {
-                        type: "file_input",
+                        type: 'file_input',
                         files: [{ id: fileID }],
                     },
                 },
                 selectAction: {
                     select_vic_team: {
-                        type: "static_select",
+                        type: 'static_select',
                         selected_option: option,
                     },
                 },
@@ -241,4 +239,4 @@ export async function peskyNeighbor(team: string) {
     });
 }
 
-peskyNeighbor("era");
+peskyNeighbor('era');
