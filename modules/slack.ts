@@ -13,6 +13,7 @@ import { trySubmitFlag } from './challenges';
 // Config
 import { SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
 import { SLACK_TARGET_CHANNEL_ID, SLACK_TEAM_CHANNEL_ID } from '../config';
+import { dispatchPeskyNeighbor } from './peskyNeighbor';
 
 
 export const slack = new App({
@@ -68,7 +69,8 @@ slack.message(async ({ client, message }) => {
             })
 
             return notifyTargetPush(name, ip, portLow, portHigh);
-        })()
+        })(),
+        dispatchPeskyNeighbor(name)
     ])
 
     if (logs) thread?.send({
@@ -194,7 +196,8 @@ export async function loadTargetFromSlackUrl(link: string) {
             })
 
             return notifyTargetPush(name, ip, portLow, portHigh);
-        })()
+        })(),
+        dispatchPeskyNeighbor(name)
     ])
 
     if (logs) thread?.send({
