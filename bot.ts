@@ -140,6 +140,19 @@ export async function updateInfoForTeam(name: string, ip: string, portLow: numbe
     await attackThread.send({ embeds: [resEmbed] });
 }
 
+export async function broadcastPeskySubmit(team: string, message: string) {
+    const channel = client.channels.cache.get(ATTACK_NOTIFY_CHANNEL_ID);
+    if (!channel?.isSendable()) return;
+
+    const pushEmbed = new EmbedBuilder()
+        .setTitle(`Pesky neighbor flag submitted for team ${team}`)
+        .setDescription(message)
+        .setColor('#C61130')
+        .setTimestamp();
+
+    await channel.send({ embeds: [pushEmbed] });
+}
+
 client.once('ready', async () => {
     // Load commands
     client.commands = new Collection();

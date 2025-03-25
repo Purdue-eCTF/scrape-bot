@@ -1,3 +1,4 @@
+import { AttachmentBuilder } from 'discord.js';
 import { App } from '@slack/bolt';
 import AdmZip from 'adm-zip';
 import AsyncLock from 'async-lock';
@@ -5,14 +6,13 @@ import { writeFile } from 'node:fs/promises';
 
 // Utils
 import { execAsync } from '../util/exec';
-import { notifyTargetPush, updateInfoForTeam } from '../bot';
+import { broadcastPeskySubmit, notifyTargetPush, updateInfoForTeam } from '../bot';
 import { formatAttackOutput, runAttacksOnLocalTarget } from './attack';
+import { trySubmitFlag } from './challenges';
 
 // Config
 import { SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
 import { SLACK_TARGET_CHANNEL_ID, SLACK_TEAM_CHANNEL_ID } from '../config';
-import { AttachmentBuilder } from 'discord.js';
-import { trySubmitFlag } from './challenges';
 
 
 export const slack = new App({
@@ -128,10 +128,21 @@ slack.message(async ({ client, message }) => {
     });
 
     // Slice off 2 messages to prevent bronson race condition
-    console.log(res.messages?.slice(2));
+    const team = res.messages
+        ?.slice(2)
+        .find((s) => s.text && /Running Pesky Neighbor on team: (.+)/.test(s.text))
+        ?.text
+        ?.match(/Running Pesky Neighbor on team: (.+)/)
+        ?.[1];
 
     // TODO: pagination?
-    // await trySubmitFlag(flag, ...);
+
+    if (!team) {
+        // TODO: try everything
+    } else {
+        const msg = await trySubmitFlag(flag, team);
+        await broadcastPeskySubmit(team, msg);
+    }
 });
 
 export async function loadTargetFromSlackUrl(link: string) {
