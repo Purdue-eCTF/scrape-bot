@@ -208,7 +208,7 @@ async function createPeskyNeighborZip(team: string) {
     return zip.toBufferPromise();
 }
 
-export async function peskyNeighbor(team: string) {
+export async function dispatchPeskyNeighbor(team: string) {
     const clientToken = `web-${Date.now()}`;
 
     const [fileID, [viewId, option]] = await Promise.all([
@@ -238,5 +238,3 @@ export async function peskyNeighbor(team: string) {
         }),
     });
 }
-
-peskyNeighbor('era');
