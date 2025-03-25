@@ -14,7 +14,7 @@ import { readLines } from '../util/socket';
 import { sleep } from '../util/misc';
 
 // Config
-import { SLACK_PRIVATE_CHANNEL_ID, SLACK_TEAM_ID, SLACK_GATEWAY_SERVER } from '../config';
+import { SLACK_TEAM_CHANNEL_ID, SLACK_TEAM_ID, SLACK_GATEWAY_SERVER } from '../config';
 import { SLACK_USER_TOKEN, SLACK_USER_COOKIE } from '../auth';
 
 
@@ -121,7 +121,7 @@ async function openModal(team: string, clientToken: string): Promise<[string, Pl
         const viewOpened = listenOnce(socket, 'view_opened');
         await webClient.apiCall('chat.command', {
             command: '/pesky_neighbor',
-            channel: SLACK_PRIVATE_CHANNEL_ID,
+            channel: SLACK_TEAM_CHANNEL_ID,
             disp: '/pesky_neighbor',
             team_id: SLACK_TEAM_ID,
             client_token: clientToken,
