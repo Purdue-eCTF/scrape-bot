@@ -1,3 +1,4 @@
+import { AttachmentBuilder } from 'discord.js';
 import { App } from '@slack/bolt';
 import AdmZip from 'adm-zip';
 import AsyncLock from 'async-lock';
@@ -5,13 +6,14 @@ import { writeFile } from 'node:fs/promises';
 
 // Utils
 import { execAsync } from '../util/exec';
-import { notifyTargetPush, updateInfoForTeam } from '../bot';
+import { broadcastPeskySubmit, notifyTargetPush, updateInfoForTeam } from '../bot';
 import { formatAttackOutput, runAttacksOnLocalTarget } from './attack';
+import { trySubmitFlag } from './challenges';
 
 // Config
 import { SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
-import { SLACK_TARGET_CHANNEL_ID } from '../config';
-import { AttachmentBuilder } from 'discord.js';
+import { SLACK_TARGET_CHANNEL_ID, SLACK_TEAM_CHANNEL_ID } from '../config';
+import { dispatchPeskyNeighbor } from './peskyNeighbor';
 
 
 export const slack = new App({
@@ -67,7 +69,8 @@ slack.message(async ({ client, message }) => {
             })
 
             return notifyTargetPush(name, ip, portLow, portHigh);
-        })()
+        })(),
+        dispatchPeskyNeighbor(name)
     ])
 
     if (logs) thread?.send({
@@ -103,6 +106,45 @@ slack.message(async ({ client, message }) => {
     await lock.acquire('git', async () => {
         await execAsync(`cd temp && git pull --ff-only && git add -f "${name}/" && (git diff-index --quiet HEAD || git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Update ports for ${name}" && git push)`);
     });
+});
+
+/**
+ * Listen for and automatically submit `flag.txt` pesky neighbor flags in the team channel.
+ */
+slack.message(async ({ client, message }) => {
+    if (message.type !== 'message') return;
+    if (message.subtype !== 'file_share') return;
+    if (message.channel !== SLACK_TEAM_CHANNEL_ID) return;
+
+    const file = message.files?.find((f) => f.name === 'flag.txt');
+    if (!file) return;
+
+    const flag = file.preview;
+    if (!flag) return;
+
+    const res = await client.conversations.history({
+        channel: SLACK_TEAM_CHANNEL_ID,
+        latest: message.ts,
+        limit: 10,
+        // inclusive: true,
+    });
+
+    // Slice off 2 messages to prevent bronson race condition
+    const team = res.messages
+        ?.slice(2)
+        .find((s) => s.text && /Running Pesky Neighbor on team: (.+)/.test(s.text))
+        ?.text
+        ?.match(/Running Pesky Neighbor on team: (.+)/)
+        ?.[1];
+
+    // TODO: pagination?
+
+    if (!team) {
+        // TODO: try everything
+    } else {
+        const msg = await trySubmitFlag(flag, team);
+        await broadcastPeskySubmit(team, msg);
+    }
 });
 
 export async function loadTargetFromSlackUrl(link: string) {
@@ -154,7 +196,8 @@ export async function loadTargetFromSlackUrl(link: string) {
             })
 
             return notifyTargetPush(name, ip, portLow, portHigh);
-        })()
+        })(),
+        dispatchPeskyNeighbor(name)
     ])
 
     if (logs) thread?.send({
