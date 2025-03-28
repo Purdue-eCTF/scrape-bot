@@ -1,7 +1,7 @@
 # scrape-bot
-Scrapes the eCTF scoreboard for rank changes.
+Scoreboard scraper and automated attack / CI / testing pipeline for eCTF.
 
-https://discord.com/oauth2/authorize?client_id=1199441161077674105&scope=bot+applications.commands&permissions=8
+[[invite link](https://discord.com/oauth2/authorize?client_id=1199441161077674105&scope=bot+applications.commands&permissions=8)]
 
 ```mermaid
 graph TD;
@@ -32,6 +32,76 @@ graph TD;
     D-->S3(Attack server ...);
 ```
 
+The main functionality of this Discord bot is split into a few subdomains:
+
+### Dev phase (build server integration)
+```mermaid
+graph TD;
+    R(Design repo)-->|Push|CI(GitHub CI);
+    CI-->|Commit hash|BS(Build dev image);
+
+    subgraph bs [Build server];
+    BS-->|Dev image|D(Queue / distribute image)
+    end
+
+    subgraph sb [Scrape bot];
+    DBS(Build / attack status);
+    end
+    
+    D-->DBS;
+    DBS-->DS(Discord alerting);
+
+    D-->S1(Attack server 1);
+    D-->S2(Attack server 2);
+    D-->S3(Attack server ...);
+```
+During the dev phase, Scrape bot acts as a webhook that propagates build / test failures from our GitHub CI pipeline.
+<!-- TODO: more? -->
+
+### Attack phase (slack integration)
+```mermaid
+graph TD;
+    subgraph bs [Build server];
+    D(Queue / distribute image);
+    end
+  
+    S(Slack targets channel)-->|Zipped design|SD(Slack autodownload);
+    D-->|Attack logs|SF(Flag submission & reporting);
+
+    subgraph sb [Scrape bot];
+    SD;
+    SF;
+    end
+
+    SD-->TR(Targets repo);
+    SD-->DI(Discord integration);
+    SD-->|Target image|D;
+
+    D-->S1(Attack server 1);
+    D-->S2(Attack server 2);
+    D-->S3(Attack server ...);
+```
+In the attack phase, Scrape bot will listen for new targets in the targets channel, and attempt to download and push the new design to the
+configured targets repository. The bot also maintains a forum channel for attack discussion and team-specific logging
+(like automated attack output).
+
+![image](https://github.com/user-attachments/assets/38bae886-9ebe-4b59-91fb-43f02cfad21a)
+
+![image](https://github.com/user-attachments/assets/ad702c9f-02bc-4a47-a2e0-f78f586f7289)
+
+It will also queue automated attacks against the new target via the build server and submit any flags it finds. For
+eCTF 2025, this includes dispatching the pesky neighbor scenario automatically with a common attack:
+
+![image](https://github.com/user-attachments/assets/cc7c8a73-3332-44ca-b63b-4fb06e0f583b)
+
+See `/modules/slack.ts` for more details on the workflows triggered by a target push to the Slack targets channel.
+
+### Convenience commands
+The bot also maintains some convenience commands via [`ctfd-api`](https://www.npmjs.com/package/@b01lers/ctfd-api) like
+displaying scoreboard reports, challenge listings, and a command for quick flag submission.
+
+![misc](https://github.com/user-attachments/assets/61447a80-10d9-4673-bcff-f4b11caee11e)
+
 ### Running locally
 Create a file called `auth.ts` that exports your Discord token, Slack bot info, express / bolt.js server ports, and channel / message IDs:
 ```ts
@@ -56,7 +126,9 @@ export const CTFD_PASSWORD = '...';
 - `CTFD_EMAIL` — the email of the team on CTFd.
 - `CTFD_PASSWORD` — the password of the team on CTFd.
 
-Other configuration options are found in `config.ts`:
+See **Slack bot setup** for how to configure the required Slack secrets.
+
+Other configuration options are found in `config.ts` (you likely won't need to change these):
 - `SCOREBOARD_NOTIFY_CHANNEL_ID` — the discord channel to send scoreboard reports in.
 - `STATUS_CHANNEL_ID` — the discord channel to send build status updates in.
 - `STATUS_MESSAGE_ID` — the message to update when the status of a build changes. The ID of this message can't really be obtained until a build status message is sent
@@ -70,8 +142,6 @@ Other configuration options are found in `config.ts`:
 - `EXPRESS_PORT` — the port to run the build-integration express server on.
 - `BOLT_PORT` — the port to run the Slack bot on.
 
-See the **Slack autodownload** section for more on how to configure the required Slack secrets.
-
 Then, install dependencies with `npm install` and run `npm start` to start the bot.
 
 To run with docker,
@@ -79,15 +149,13 @@ To run with docker,
 docker compose up -d --build
 ```
 
-### Slack autodownload
-> `/modules/slack.ts`
-
+### Slack bot setup
 To set up the Slack integration, create a new Slack app in the [Slack API portal](https://api.slack.com/apps).
 
 ![image](https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/7e6d3a84-3d5f-46f3-a901-b08943ce64b8)
 
 After creating, you can copy your Slack token and signing secret into `auth.ts`.
-Then, add OAuth scopes in `OAuth & Permissions`; you'll likely need, at minimum, `channels:history`, `chat:write`, and `files:read`.
+Then, add OAuth scopes in `OAuth & Permissions`; you'll need, at minimum, `channels:history`, `chat:write`, and `files:read`.
 
 ![image](https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/f9330ce2-c8d3-4b9d-9279-ab2c5b4bb90d)
 
@@ -98,46 +166,3 @@ http://ctf.b01lers.com:8081/slack/events
 Note that your server should be running at this point to respond to Slack's `challenge` request.
 
 ![image](https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/d4409772-7fb0-4d03-8955-a5ac1a28c1b2)
-
-### Scoreboard
-> `/modules/scoreboard.ts`
-
-> `/modules/challenges.ts`
-
-This bot periodically fetches the eCTF scoreboard for updates, sending a report of changes each day. Alternatively, run
-`/report` to get a report of the day so far.
-
-<p align="center">
-    <img width="400" src="https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/d7c1ad2a-a4fb-428e-a284-9faf25c8a48a"> <img width="400" src="https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/2a2509c3-9295-43f4-bbad-406dad166d6b">
-</p>
-
-To facilitate this, the bot will need a CTFd access token generated on the account settings page (https://ectf.ctfd.io/settings).
-
-Note that for certain privileged actions (like determining solved challenges and submitting flags), an access token is
-not enough and an authed session cookie is required instead.
-
-Scrape bot will handle the session management automatically; however, it will need the login credentials of the team
-account to do so.
-
-### Build server
-> `/modules/status.ts`
-
-This bot also integrates with the [build server](https://github.com/Purdue-eCTF/2025-eCTF-build-server) for automated
-build status alerting during the dev phase.
-
-<img width="450" src="https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/3bf83b07-fc5e-4dc1-8a82-835da687e165">
-<img width="450" src="https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/fa155833-c128-4e34-aef2-2ffb1f5db19f">
-
-Make sure the build server is configured to send POST requests to this bot's exposed express endpoint properly.
-
-<!--
-### Flag submission userscript
-> `/modules/flags.ts`
-
-In case a Tufts situation occurs again, this bot contains a generator for a userscript to automatically scrape the flag
-submission page and submit a flag as soon as possible.
-
-<p align="center">
-    <img width="700" src="https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/a86818d0-9031-438f-86ff-02bfde9bb216">
-</p>
--->
