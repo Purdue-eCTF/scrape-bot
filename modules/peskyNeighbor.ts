@@ -21,7 +21,7 @@ import { SLACK_USER_TOKEN, SLACK_USER_COOKIE } from '../auth';
 const HEADERS = {
     cookie: `d=${encodeURIComponent(SLACK_USER_COOKIE)}`,
 };
-const SLEEP = 10_000;
+const SLEEP = 2_000;
 const MIN_FRAMES = 2; // minimum number of frames to capture
 const webClient = new WebClient(SLACK_USER_TOKEN, { headers: HEADERS });
 
