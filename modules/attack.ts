@@ -5,7 +5,7 @@ import { AUTH_SECRET } from '../auth';
 // Utils
 import { trySubmitFlag } from './challenges';
 import { truncate } from '../util/misc';
-
+import { readLines } from '../util/socket';
 
 type BuildServerAttackMethod = 'attack-target' | 'attack-script';
 
@@ -32,31 +32,28 @@ export async function runAttacksOnLocalTarget(team: string): Promise<[string, st
     return new Promise((res, rej) => {
         const alerts: string[] = [];
         let logs = '';
-        let lineBuf = '';
+        let flagSubmissions: Promise<void>[] = [];
 
-        attackSocket.on('data', async (d) => {
-            const [curr, ...lines] = d.toString().split('\n');
-            lineBuf += curr;
+        readLines(attackSocket, async (lineBuf) => {
+            logs += lineBuf + '\n';
 
-            for (const line of lines) {
-                // Flush the current line
-                logs += lineBuf + '\n';
+            if (lineBuf.startsWith('%*&')) {
+                await Promise.all(flagSubmissions);
+                return res([logs, alerts]);
+            }
 
-                if (lineBuf.startsWith('%*&'))
-                    return res([logs, alerts]);
+            const flag = lineBuf.match(/ectf\{.+?}/)?.[0];
+            if (flag) {
+                flagSubmissions.push(
+                    trySubmitFlag(flag, team).then((message) => {
+                        alerts.push(message);
+                    })
+                );
+            }
 
-                const flag = lineBuf.match(/ectf\{.+?}/)?.[0];
-                if (flag) {
-                    const message = await trySubmitFlag(flag, team);
-                    alerts.push(message);
-                }
-
-                const vuln = lineBuf.match(/POTENTIAL VULNERABILITY: (.+)/)?.[1];
-                if (vuln) {
-                    alerts.push(`Potential vulnerability: ${vuln}`);
-                }
-
-                lineBuf = line;
+            const vuln = lineBuf.match(/POTENTIAL VULNERABILITY: (.+)/)?.[1];
+            if (vuln) {
+                alerts.push(`Potential vulnerability: ${vuln}`);
             }
         });
     });
@@ -68,37 +65,29 @@ export async function runCustomAttackOnTarget(team: string, scriptUrl: string): 
     return new Promise((res, rej) => {
         const alerts: string[] = [];
         let logs = '';
-        let lineBuf = '';
         let flagSubmissions: Promise<void>[] = [];
 
-        attackSocket.on('data', async (d) => {
-            const [curr, ...lines] = d.toString().split('\n');
-            lineBuf += curr;
+        readLines(attackSocket, async (lineBuf) => {
+            // Flush the current line
+            logs += lineBuf + '\n';
 
-            for (const line of lines) {
-                // Flush the current line
-                logs += lineBuf + '\n';
+            if (lineBuf.startsWith('%*&')) {
+                await Promise.all(flagSubmissions);
+                return res([logs, alerts]);
+            }
 
-                if (lineBuf.startsWith('%*&')) {
-                    await Promise.all(flagSubmissions);
-                    return res([logs, alerts]);
-                }
+            const flag = lineBuf.match(/ectf\{.+?}/)?.[0];
+            if (flag) {
+                flagSubmissions.push(
+                    trySubmitFlag(flag, team).then((message) => {
+                        alerts.push(message);
+                    })
+                );
+            }
 
-                const flag = lineBuf.match(/ectf\{.+?}/)?.[0];
-                if (flag) {
-                    flagSubmissions.push(
-                        trySubmitFlag(flag, team).then((message) => {
-                            alerts.push(message);
-                        })
-                    );
-                }
-
-                const vuln = lineBuf.match(/POTENTIAL VULNERABILITY: (.+)/)?.[1];
-                if (vuln) {
-                    alerts.push(`Potential vulnerability: ${vuln}`);
-                }
-
-                lineBuf = line;
+            const vuln = lineBuf.match(/POTENTIAL VULNERABILITY: (.+)/)?.[1];
+            if (vuln) {
+                alerts.push(`Potential vulnerability: ${vuln}`);
             }
         });
     });
