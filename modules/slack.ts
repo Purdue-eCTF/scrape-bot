@@ -1,12 +1,17 @@
+import type { ForumThreadChannel } from 'discord.js';
 import { AttachmentBuilder } from 'discord.js';
 import { App } from '@slack/bolt';
 import AdmZip from 'adm-zip';
 import AsyncLock from 'async-lock';
-import { writeFile } from 'node:fs/promises';
-
+import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
 // Utils
 import { execAsync } from '../util/exec';
-import { broadcastPeskySubmit, notifyTargetPush, updateInfoForTeam } from '../bot';
+import {
+    attackThreadExists,
+    broadcastPeskySubmit,
+    notifyTargetPush,
+    updateInfoForTeam,
+} from '../bot';
 import { formatAttackOutput, runAttacksOnLocalTarget } from './attack';
 import { trySubmitFlag } from './challenges';
 
@@ -15,10 +20,25 @@ import { SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
 import { SLACK_TARGET_CHANNEL_ID, SLACK_TEAM_CHANNEL_ID } from '../config';
 import { dispatchPeskyNeighbor } from './peskyNeighbor';
 
+type BaseFile = {
+    id: string;
+    name: string | null;
+    title: string | null;
+    filetype: string;
+    url_private?: string;
+    url_private_download?: string;
+    preview?: string;
+    preview_highlight?: string;
+    file_access?: string;
+};
+type BaseMessage = {
+    text: string;
+    files?: BaseFile[];
+};
 
 export const slack = new App({
     token: SLACK_TOKEN,
-    signingSecret: SLACK_SIGNING_SECRET
+    signingSecret: SLACK_SIGNING_SECRET,
 });
 
 export const lock = new AsyncLock();
@@ -34,54 +54,11 @@ slack.message(async ({ client, message }) => {
     if (message.subtype !== 'file_share') return;
     if (message.channel !== SLACK_TARGET_CHANNEL_ID) return;
 
-    // Look for zip files; if `file_access` is present, we need to handle the Slack Connect file download differently.
-    // https://api.slack.com/apis/channels-between-orgs#check_file_info
-    const raw = message.files?.find((f) => f.filetype === 'zip');
-    const file = raw && 'file_access' in raw && raw.file_access === 'check_file_info'
-        ? (await client.files.info({ file: raw.id })).file
-        : raw
-
-    if (!file) return;
-
-    // Slice off `_package.zip`
-    const name = file.name!.slice(0, -12);
-    console.log('[SLACK] Found', file.name);
-
-    const { ip, portLow, portHigh } = tryParseIpPort(message.text);
-
-    // Download zip and extract to temp dir
-    const buf = await fetch(file.url_private_download!, {
-        headers: { 'Authorization': `Bearer ${SLACK_TOKEN}` }
-    }).then((r) => r.arrayBuffer())
-
-    const zip = new AdmZip(Buffer.from(buf));
-    zip.extractAllTo(`./temp/${name}`);
-    console.log('[SLACK] Extracted', file.name);
-
-    await writePortsFile(name, ip, portLow, portHigh);
-
-    // In parallel: send new design to build server, push design to git
-    const [logs, thread] = await Promise.all([
-        runAttacksOnLocalTarget(name).catch(() => {}),
-        (async () => {
-            await lock.acquire('git', async () => {
-                await execAsync(`cd temp && git pull --ff-only && git add -f "${name}/" && (git diff-index --quiet HEAD || git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push)`);
-            })
-
-            return notifyTargetPush(name, ip, portLow, portHigh);
-        })(),
-        dispatchPeskyNeighbor(name)
-    ])
-
-    if (logs) thread?.send({
-        content: formatAttackOutput(name, logs[1]),
-        files: [new AttachmentBuilder(Buffer.from(logs[0])).setName('logs.txt')]
-    });
+    await loadTargetFromSlackMessage(message);
 });
 
 /**
  * When a target message is edited: update channel and targets repo with updated ports / IP.
- * TODO: rerun attack tests?
  */
 slack.message(async ({ client, message }) => {
     if (message.type !== 'message') return;
@@ -90,22 +67,7 @@ slack.message(async ({ client, message }) => {
 
     if (!('files' in message.message) || !message.message.text) return;
 
-    const raw = message.message.files?.find((f) => f.filetype === 'zip');
-    const file = raw && 'file_access' in raw && raw.file_access === 'check_file_info'
-        ? (await client.files.info({ file: raw.id })).file
-        : raw
-
-    if (!file) return;
-
-    const { ip, portLow, portHigh } = tryParseIpPort(message.message.text);
-    const name = file.name!.slice(0, -12);
-
-    await updateInfoForTeam(name, ip, portLow, portHigh);
-
-    await writePortsFile(name, ip, portLow, portHigh);
-    await lock.acquire('git', async () => {
-        await execAsync(`cd temp && git pull --ff-only && git add -f "${name}/" && (git diff-index --quiet HEAD || git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Update ports for ${name}" && git push)`);
-    });
+    await loadTargetFromSlackMessage(message.message as BaseMessage);
 });
 
 /**
@@ -133,9 +95,7 @@ slack.message(async ({ client, message }) => {
     const team = res.messages
         ?.slice(2)
         .find((s) => s.text && /Running Pesky Neighbor on team: (.+)/.test(s.text))
-        ?.text
-        ?.match(/Running Pesky Neighbor on team: (.+)/)
-        ?.[1];
+        ?.text?.match(/Running Pesky Neighbor on team: (.+)/)?.[1];
 
     // TODO: pagination?
 
@@ -159,65 +119,137 @@ export async function loadTargetFromSlackUrl(link: string) {
         latest: `${ts1}.${ts2}`,
         limit: 1,
         inclusive: true,
-    })
+    });
     console.log('[SLACK] Load response', res);
     if (!res.messages?.[0]) return;
 
-    // TODO: no code reuse because slack api types are garbage
     const message = res.messages[0];
-    if (!message.text) return;
 
+    // TODO:
+    // Types of property 'text' are incompatible.
+    // Type 'string | undefined' is not assignable to type 'string'.
+    // isn't this already type narrowed???
+    // kevin pls fix thx
+    await loadTargetFromSlackMessage(message as BaseMessage);
+}
+
+async function tryLoadPackage(message: BaseMessage) {
+    // Look for zip files; if `file_access` is present, we need to handle the Slack Connect file download differently.
+    // https://api.slack.com/apis/channels-between-orgs#check_file_info
     const raw = message.files?.find((f) => f.filetype === 'zip');
-    const file = raw && 'file_access' in raw && raw.file_access === 'check_file_info'
-        ? (await slack.client.files.info({ file: raw.id! })).file
-        : raw
+    if (!raw) return;
+    const file =
+        raw && 'file_access' in raw && raw.file_access === 'check_file_info'
+            ? (await slack.client.files.info({ file: raw.id })).file
+            : raw;
 
-    if (!file) return;
+    return file;
+}
+async function loadTargetFromSlackMessage(message: BaseMessage) {
+    const file = await tryLoadPackage(message);
 
-    const { ip, portLow, portHigh } = tryParseIpPort(message.text);
-    const name = file.name!.slice(0, -12);
+    let { ip, portLow, portHigh } = tryParseIpPort(message.text);
 
-    // Download zip and extract to temp dir
-    const buf = await fetch(file.url_private_download!, {
-        headers: { 'Authorization': `Bearer ${SLACK_TOKEN}` }
-    }).then((r) => r.arrayBuffer())
+    let team = file?.name?.slice(0, -12) ?? tryParseTeam(message.text);
+    if (!team) {
+        // TODO return error to discord
+        console.error('[SLACK] Could not find team');
+        return;
+    }
 
-    const zip = new AdmZip(Buffer.from(buf));
-    zip.extractAllTo(`./temp/${name}`);
+    team = team.toLowerCase();
+    const portsUpdated = !isNaN(portLow);
+    const teamFolder = `./temp/${team}`;
 
-    await writePortsFile(name, ip, portLow, portHigh);
+    if (file?.name) {
+        console.log('[SLACK] Found', file.name);
 
-    // In parallel: send new design to build server, push design to git
-    const [logs, thread] = await Promise.all([
-        runAttacksOnLocalTarget(name).catch(() => {}),
+        // backup ports.txt if necessary
+        if (!portsUpdated) {
+            try {
+                let ports;
+                [ip, ...ports] = (await readFile(`${teamFolder}/ports.txt`)).toString().split(' ');
+                portLow = Number(ports[0]);
+                portHigh = Number(ports[ports.length - 1]);
+            } catch (e) {
+                // ignore file does not exist errors
+                // TODO: check specific error
+                console.log(e);
+            }
+        }
+
+        await rm(teamFolder, { recursive: true, force: true });
+
+        // Download zip and extract to temp dir
+        const buf = await fetch(file.url_private_download!, {
+            headers: { Authorization: `Bearer ${SLACK_TOKEN}` },
+        }).then((r) => r.arrayBuffer());
+
+        const zip = new AdmZip(Buffer.from(buf));
+        zip.extractAllTo(teamFolder);
+        console.log('[SLACK] Extracted', file.name);
+    }
+
+    const attackThread = await attackThreadExists(team);
+    if (attackThread && portsUpdated) {
+        await updateInfoForTeam(team, ip, portLow, portHigh);
+    }
+
+    await writePortsFile(team, ip, portLow, portHigh);
+
+    const promises: [
+        Promise<ForumThreadChannel | void>,
+        Promise<[string, string[]] | void>?,
+        Promise<void>?
+    ] = [
         (async () => {
             await lock.acquire('git', async () => {
-                await execAsync(`cd temp && git pull --ff-only && git add -f "${name}/" && (git diff-index --quiet HEAD || git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${name}" && git push)`);
-            })
+                await execAsync(
+                    `cd temp && git pull --ff-only && git add -f "${team}/" && (git diff-index --quiet HEAD || git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${team}" && git push)`
+                );
+            });
 
-            return notifyTargetPush(name, ip, portLow, portHigh);
+            if (!attackThread) {
+                return notifyTargetPush(team, ip, portLow, portHigh);
+            }
         })(),
-        dispatchPeskyNeighbor(name)
-    ])
+    ];
 
-    if (logs) thread?.send({
-        content: formatAttackOutput(name, logs[1]),
-        files: [new AttachmentBuilder(Buffer.from(logs[0])).setName('logs.txt')]
-    });
+    // if package exists and ports exist
+    if ((await readdir(teamFolder)).length > 1 && !isNaN(portLow)) {
+        promises.push(runAttacksOnLocalTarget(team).catch(() => {}));
+    }
+
+    if (portsUpdated) {
+        promises.push(dispatchPeskyNeighbor(team));
+    }
+
+    // In parallel: send new design to build server, push design to git
+    const [thread, logs] = await Promise.all(promises);
+
+    if (logs)
+        thread?.send({
+            content: formatAttackOutput(team, logs[1]),
+            files: [new AttachmentBuilder(Buffer.from(logs[0])).setName('logs.txt')],
+        });
+}
+
+function tryParseTeam(raw: string) {
+    return raw.match(/(\w+) package/i)?.[1];
 }
 
 function tryParseIpPort(raw: string) {
     const ip = raw.match(/\d+\.\d+\.\d+\.\d+/)?.[0];
 
     const portMatches = raw.match(/(?<![.\d])(\d{3,})(?:-(\d+))?(?![.\d])/);
-    const portLow = Number(portMatches![1]);
+    const portLow = Number(portMatches?.[1]);
     // const portHigh = portMatches?.[2];
 
     return {
         ip: ip ?? '34.235.112.89', // If no IP parsed, assume default
         portLow: portLow,
         portHigh: portLow + 4, // Don't bother parsing higher port for typos; assume its always lower + 4
-    }
+    };
 }
 
 export async function writePortsFile(name: string, ip: string, portLow: number, portHigh: number) {
@@ -227,6 +259,8 @@ export async function writePortsFile(name: string, ip: string, portLow: number, 
 
 export async function initTargetsRepo() {
     console.log('[GIT] Initializing targets repository');
-    await execAsync(`git clone ${TARGETS_REPO_URL} temp || (cd temp && git fetch && git pull --ff-only)`);
+    await execAsync(
+        `git clone ${TARGETS_REPO_URL} temp || (cd temp && git fetch && git pull --ff-only)`
+    );
     console.log(await execAsync('cd temp && git status'));
 }
