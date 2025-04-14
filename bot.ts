@@ -198,8 +198,9 @@ client.on('interactionCreate', async (interaction) => {
 
     try {
         await command.execute(interaction);
-    } catch {
+    } catch (e) {
         // TODO ...
+        console.error(e);
     }
 });
 
@@ -216,7 +217,8 @@ client.on('interactionCreate', async (interaction) => {
 
     try {
         await command.autocomplete(interaction);
-    } catch {
+    } catch (e) {
         // TODO ...
+        console.error(e);
     }
 });
