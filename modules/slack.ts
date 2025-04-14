@@ -3,7 +3,7 @@ import { AttachmentBuilder } from 'discord.js';
 import { App } from '@slack/bolt';
 import AdmZip from 'adm-zip';
 import AsyncLock from 'async-lock';
-import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 // Utils
 import { execAsync } from '../util/exec';
 import {
@@ -160,6 +160,7 @@ async function loadTargetFromSlackMessage(message: BaseMessage) {
     team = team.toLowerCase();
     const portsUpdated = !isNaN(portLow);
     const teamFolder = `./temp/${team}`;
+    await mkdir(teamFolder);
 
     if (file?.name) {
         console.log('[SLACK] Found', file.name);
@@ -195,7 +196,9 @@ async function loadTargetFromSlackMessage(message: BaseMessage) {
         await updateInfoForTeam(team, ip, portLow, portHigh);
     }
 
-    await writePortsFile(team, ip, portLow, portHigh);
+    if (!isNaN(portLow)) {
+        await writePortsFile(team, ip, portLow, portHigh);
+    }
 
     const promises: [
         Promise<ForumThreadChannel | void>,
