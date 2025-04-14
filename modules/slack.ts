@@ -160,7 +160,7 @@ async function loadTargetFromSlackMessage(message: BaseMessage) {
     team = team.toLowerCase();
     const portsUpdated = !isNaN(portLow);
     const teamFolder = `./temp/${team}`;
-    await mkdir(teamFolder);
+    await mkdir(teamFolder, { recursive: true }); // ignore if exists
 
     if (file?.name) {
         console.log('[SLACK] Found', file.name);
