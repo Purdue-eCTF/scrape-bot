@@ -1,11 +1,11 @@
 import type { Subcommand } from '../../util/commands';
-import { ChannelType, EmbedBuilder, SlashCommandSubcommandBuilder } from 'discord.js';
-import { ATTACK_FORUM_CHANNEL_ID } from '../../config';
+import { EmbedBuilder, SlashCommandSubcommandBuilder } from 'discord.js';
 
 // Utils
 import { lock, writePortsFile } from '../../modules/slack';
 import { execAsync } from '../../util/exec';
 import { updateInfoForTeam } from '../../bot';
+import { autocompleteTargets } from '../../util/autocomplete';
 
 
 export default {
@@ -48,18 +48,5 @@ export default {
             .setColor('#C61130')
         await interaction.reply({ embeds: [successEmbed] });
     },
-    async autocomplete(interaction) {
-        const input = interaction.options.getFocused();
-
-        const attackThreadsChannel = interaction.client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
-        if (attackThreadsChannel?.type !== ChannelType.GuildForum)
-            return interaction.respond([]);
-
-        const targets = attackThreadsChannel.threads.cache
-            .filter((c) => c.name.toLowerCase().includes(input.toLowerCase()))
-            .map((c) => ({ name: c.name, value: c.name }))
-            .slice(0, 25)
-
-        return interaction.respond(targets);
-    }
+    autocomplete: autocompleteTargets
 } satisfies Subcommand;
