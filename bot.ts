@@ -113,10 +113,7 @@ export async function notifyTargetPush(name: string, ip: string, portLow: number
 }
 
 export async function updateInfoForTeam(name: string, ip: string, portLow: number, portHigh: number) {
-    const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
-    if (attackThreadsChannel?.type !== ChannelType.GuildForum) return;
-
-    const attackThread = attackThreadsChannel.threads.cache.find((c) => c.name === name);
+    const attackThread = await getAttackThreadIfExists(name);
     if (!attackThread) return;
 
     const targetEmbed = new EmbedBuilder()
@@ -199,8 +196,22 @@ client.on('interactionCreate', async (interaction) => {
     try {
         await command.execute(interaction);
     } catch (e) {
-        // TODO ...
         console.error(e);
+
+        // Send error log in discord
+        const errorEmbed = new EmbedBuilder()
+            .setTitle(`Error occurred while running \`/${interaction.commandName}\``)
+            .setDescription(`\`\`\`\n${(e as any).message}\`\`\``)
+            .setColor('#C61130')
+            .setTimestamp();
+
+        // If the interaction hasn't been replied to yet, we can reply with the embed
+        if (!interaction.replied)
+            return interaction.reply({ embeds: [errorEmbed] });
+
+        // Otherwise, fall back to sending the embed in the channel
+        if (!interaction.channel?.isSendable()) return;
+        await interaction.channel.send({ embeds: [errorEmbed] });
     }
 });
 
@@ -218,7 +229,6 @@ client.on('interactionCreate', async (interaction) => {
     try {
         await command.autocomplete(interaction);
     } catch (e) {
-        // TODO ...
         console.error(e);
     }
 });
