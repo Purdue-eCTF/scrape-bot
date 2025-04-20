@@ -140,11 +140,11 @@ export async function updateInfoForTeam(name: string, ip: string, portLow: numbe
     await attackThread.send({ embeds: [resEmbed] });
 }
 
-export async function attackThreadExists(name: string) {
+export async function getAttackThreadIfExists(name: string) {
     const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
     if (attackThreadsChannel?.type !== ChannelType.GuildForum) return;
 
-    return attackThreadsChannel.threads.cache.some((c) => c.name === name);
+    return attackThreadsChannel.threads.cache.find((c) => c.name === name);
 }
 
 export async function broadcastPeskySubmit(team: string, message: string) {

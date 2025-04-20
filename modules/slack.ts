@@ -1,40 +1,41 @@
-import type { ForumThreadChannel } from 'discord.js';
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { AttachmentBuilder } from 'discord.js';
 import { App } from '@slack/bolt';
 import AdmZip from 'adm-zip';
 import AsyncLock from 'async-lock';
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+
 // Utils
 import { execAsync } from '../util/exec';
 import {
-    attackThreadExists,
+    getAttackThreadIfExists,
     broadcastPeskySubmit,
     notifyTargetPush,
     updateInfoForTeam,
 } from '../bot';
+import { dispatchPeskyNeighbor } from './peskyNeighbor';
 import { formatAttackOutput, runAttacksOnLocalTarget } from './attack';
 import { trySubmitFlag } from './challenges';
 
 // Config
 import { SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
 import { SLACK_TARGET_CHANNEL_ID, SLACK_TEAM_CHANNEL_ID } from '../config';
-import { dispatchPeskyNeighbor } from './peskyNeighbor';
+
 
 type BaseFile = {
-    id: string;
-    name: string | null;
-    title: string | null;
-    filetype: string;
-    url_private?: string;
-    url_private_download?: string;
-    preview?: string;
-    preview_highlight?: string;
-    file_access?: string;
-};
+    id: string,
+    name: string | null,
+    title: string | null,
+    filetype: string,
+    url_private?: string,
+    url_private_download?: string,
+    preview?: string,
+    preview_highlight?: string,
+    file_access?: string
+}
 type BaseMessage = {
-    text: string;
-    files?: BaseFile[];
-};
+    text: string,
+    files?: BaseFile[]
+}
 
 export const slack = new App({
     token: SLACK_TOKEN,
@@ -87,8 +88,7 @@ slack.message(async ({ client, message }) => {
     const res = await client.conversations.history({
         channel: SLACK_TEAM_CHANNEL_ID,
         latest: message.ts,
-        limit: 10,
-        // inclusive: true,
+        limit: 10
     });
 
     // Slice off 2 messages to prevent bronson race condition
@@ -125,11 +125,6 @@ export async function loadTargetFromSlackUrl(link: string) {
 
     const message = res.messages[0];
 
-    // TODO:
-    // Types of property 'text' are incompatible.
-    // Type 'string | undefined' is not assignable to type 'string'.
-    // isn't this already type narrowed???
-    // kevin pls fix thx
     await loadTargetFromSlackMessage(message as BaseMessage);
 }
 
@@ -138,16 +133,14 @@ async function tryLoadPackage(message: BaseMessage) {
     // https://api.slack.com/apis/channels-between-orgs#check_file_info
     const raw = message.files?.find((f) => f.filetype === 'zip');
     if (!raw) return;
-    const file =
-        raw && 'file_access' in raw && raw.file_access === 'check_file_info'
-            ? (await slack.client.files.info({ file: raw.id })).file
-            : raw;
 
-    return file;
+    return raw && 'file_access' in raw && raw.file_access === 'check_file_info'
+        ? (await slack.client.files.info({ file: raw.id })).file
+        : raw;
 }
+
 async function loadTargetFromSlackMessage(message: BaseMessage) {
     const file = await tryLoadPackage(message);
-
     let { ip, portLow, portHigh } = tryParseIpPort(message.text);
 
     let team = file?.name?.slice(0, -12) ?? tryParseTeam(message.text);
@@ -191,50 +184,45 @@ async function loadTargetFromSlackMessage(message: BaseMessage) {
         console.log('[SLACK] Extracted', file.name);
     }
 
-    const attackThread = await attackThreadExists(team);
-    if (attackThread && portsUpdated) {
+    // If ports were updated: create the attack thread if it doesn't exist, or update the
+    // ports embed if it does.
+    const attackThread = await getAttackThreadIfExists(team);
+    if (!attackThread && portsUpdated)
+        await notifyTargetPush(team, ip, portLow, portHigh);
+    else if (attackThread && portsUpdated)
         await updateInfoForTeam(team, ip, portLow, portHigh);
-    }
 
-    if (!isNaN(portLow)) {
+    if (!isNaN(portLow))
         await writePortsFile(team, ip, portLow, portHigh);
-    }
 
     const promises: [
-        Promise<ForumThreadChannel | void>,
+        Promise<void>,
         Promise<[string, string[]] | void>?,
         Promise<void>?
     ] = [
-        (async () => {
-            await lock.acquire('git', async () => {
-                await execAsync(
-                    `cd temp && git pull --ff-only && git add -f "${team}/" && (git diff-index --quiet HEAD || git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${team}" && git push)`
-                );
-            });
-
-            if (!attackThread) {
-                return notifyTargetPush(team, ip, portLow, portHigh);
-            }
-        })(),
+        lock.acquire('git', async () => {
+            await execAsync(
+                `cd temp && git pull --ff-only && git add -f "${team}/" && (git diff-index --quiet HEAD || git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${team}" && git push)`
+            );
+        })
     ];
 
-    // if package exists and ports exist
-    if ((await readdir(teamFolder)).length > 1 && !isNaN(portLow)) {
+    // Run automated attacks if both the package and `ports.txt` exist
+    if ((await readdir(teamFolder)).length > 1 && !isNaN(portLow))
         promises.push(runAttacksOnLocalTarget(team).catch(() => {}));
-    }
 
-    if (portsUpdated) {
+    // Run pesky neighbor if ports exist
+    if (portsUpdated)
         promises.push(dispatchPeskyNeighbor(team));
-    }
 
     // In parallel: send new design to build server, push design to git
-    const [thread, logs] = await Promise.all(promises);
+    const [, logs] = await Promise.all(promises);
+    if (!logs) return;
 
-    if (logs)
-        thread?.send({
-            content: formatAttackOutput(team, logs[1]),
-            files: [new AttachmentBuilder(Buffer.from(logs[0])).setName('logs.txt')],
-        });
+    attackThread?.send({
+        content: formatAttackOutput(team, logs[1]),
+        files: [new AttachmentBuilder(Buffer.from(logs[0])).setName('logs.txt')],
+    });
 }
 
 function tryParseTeam(raw: string) {
