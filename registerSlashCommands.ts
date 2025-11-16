@@ -1,6 +1,6 @@
 import { REST, Routes } from 'discord.js';
 import { DISCORD_TOKEN } from './auth';
-import { getAllCommands } from './util/commands';
+import commands from './commands';
 
 
 const clientId = '1199441161077674105';
@@ -8,7 +8,6 @@ const rest = new REST().setToken(DISCORD_TOKEN);
 
 (async () => {
     try {
-        const commands = await getAllCommands();
         const body = commands.map(c => c.data);
 
         console.log('Started refreshing application (/) commands.');

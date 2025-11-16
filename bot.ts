@@ -1,16 +1,10 @@
-import {
-    ActivityType,
-    ChannelType,
-    Client,
-    Collection,
-    CommandInteraction,
-    EmbedBuilder
-} from 'discord.js';
+import { ActivityType, ChannelType, Client, Collection, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { CronJob } from 'cron';
 
 // Modules
 import { fetchAndUpdateScoreboard, scoreboard } from './modules/scoreboard';
-import { Command, CommandGroup, getAllCommands } from './util/commands';
+import { Command, CommandGroup } from './util/commands';
+import commands from './commands';
 
 // Config
 import {
@@ -37,6 +31,13 @@ export const client = new Client({
     presence: { activities: [{ type: ActivityType.Watching, name: 'the eCTF scoreboard' }] },
     allowedMentions: { repliedUser: false }
 });
+
+// Load commands
+client.commands = new Collection();
+for (const command of commands) {
+    console.log(`[DISC] Loaded /${command.data.name}`);
+    client.commands.set(command.data.name, command);
+}
 
 let broadcastDiffsJob: CronJob;
 
@@ -158,15 +159,6 @@ export async function broadcastPeskySubmit(team: string, message: string) {
 }
 
 client.once('ready', async () => {
-    // Load commands
-    client.commands = new Collection();
-
-    const commands = await getAllCommands();
-    for (const command of commands) {
-        console.log(`[DISC] Loaded /${command.data.name}`);
-        client.commands.set(command.data.name, command);
-    }
-
     console.log(`[DISC] Logged in as ${client.user?.tag}!`);
 
     // Broadcast diffs daily

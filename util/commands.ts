@@ -26,37 +26,19 @@ export type CommandGroup = {
     commands: { [key: string]: Subcommand }
 }
 
-export async function getAllCommands() {
-    const files = await readdir('./commands', { withFileTypes: true });
-    const ret: (Command | CommandGroup)[] = [];
+export function commandGroupOf(name: string, commands: Subcommand[]): CommandGroup {
+    const groupData = new SlashCommandBuilder()
+        .setName(name)
+        .setDescription(`[${name}] command group`)
+    const commandMap: { [key: string]: Subcommand } = {};
 
-    for (const file of files) {
-        // Handle subcommands
-        if (file.isDirectory()) {
-            const commandFiles = await readdir(`./commands/${file.name}`);
-
-            const groupData = new SlashCommandBuilder()
-                .setName(file.name)
-                .setDescription(`[${file.name}] command group`)
-            const commands: { [key: string]: Subcommand } = {};
-
-            // Hack: `fs` paths are relative to the currently running file, while `import` paths are relative
-            // to *this* file.
-            for (const raw of commandFiles) {
-                const name = raw.slice(0, -3);
-                const command = (await import(`../commands/${file.name}/${name}`)).default as Subcommand;
-
-                commands[name] = command;
-                groupData.addSubcommand(command.data)
-            }
-
-            ret.push({ data: groupData, commands });
-            continue;
-        }
-
-        const command = (await import(`../commands/${file.name.slice(0, -3)}`)).default as Command;
-        ret.push(command);
+    for (const command of commands) {
+        commandMap[command.data.name] = command;
+        groupData.addSubcommand(command.data);
     }
 
-    return ret;
+    return {
+        data: groupData,
+        commands: commandMap
+    }
 }
