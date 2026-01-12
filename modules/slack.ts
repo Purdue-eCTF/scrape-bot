@@ -12,7 +12,6 @@ import {
     notifyTargetPush,
     updateInfoForTeam,
 } from '../bot';
-import { dispatchPeskyNeighbor } from './peskyNeighbor';
 import { formatAttackOutput, runAttacksOnLocalTarget } from './attack';
 import { trySubmitFlag } from './challenges';
 
@@ -212,8 +211,8 @@ async function loadTargetFromSlackMessage(message: BaseMessage) {
         promises.push(runAttacksOnLocalTarget(team).catch(() => {}));
 
     // Run pesky neighbor if ports exist
-    if (portsUpdated)
-        promises.push(dispatchPeskyNeighbor(team));
+    // if (portsUpdated)
+    //     promises.push(dispatchPeskyNeighbor(team));
 
     // In parallel: send new design to build server, push design to git
     const [, logs] = await Promise.all(promises);
