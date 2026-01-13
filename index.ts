@@ -5,7 +5,7 @@ import { fetchAndUpdateScoreboard } from './modules/scoreboard';
 import { fetchAndUpdateChallenges } from './modules/challenges';
 
 // Config
-import { BOLT_PORT, EXPRESS_PORT } from './config';
+import { EXPRESS_PORT } from './config';
 
 
 void initTargetsRepo();
@@ -16,7 +16,7 @@ setInterval(fetchAndUpdateScoreboard, 1000 * 60);
 void fetchAndUpdateChallenges();
 setInterval(fetchAndUpdateChallenges, 1000 * 60);
 
-// Start discord bot, slack bot, and status server.
+// Start discord bot, zulip bot, and status server.
 void client.login(process.env.DISCORD_TOKEN);
 void initZulipClient();
 

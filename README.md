@@ -35,52 +35,10 @@ graph TD;
 The main functionality of this Discord bot is split into a few subdomains:
 
 ### Dev phase (build server integration)
-```mermaid
-graph TD;
-    R(Design repo)-->|Push|CI(GitHub CI);
-    CI-->|Commit hash|BS(Build dev image);
-
-    subgraph bs [Build server];
-    BS-->|Dev image|D(Queue / distribute image)
-    end
-
-    subgraph sb [Scrape bot];
-    DBS(Build / attack status);
-    end
-    
-    D-->DBS;
-    DBS-->DS(Discord alerting);
-
-    D-->S1(Attack server 1);
-    D-->S2(Attack server 2);
-    D-->S3(Attack server ...);
-```
 During the dev phase, Scrape bot acts as a webhook that propagates build / test failures from our GitHub CI pipeline.
 <!-- TODO: more? -->
 
-### Attack phase (slack integration)
-```mermaid
-graph TD;
-    subgraph bs [Build server];
-    D(Queue / distribute image);
-    end
-  
-    S(Slack targets channel)-->|Zipped design|SD(Slack autodownload);
-    D-->|Attack logs|SF(Flag submission & reporting);
-
-    subgraph sb [Scrape bot];
-    SD;
-    SF;
-    end
-
-    SD-->TR(Targets repo);
-    SD-->DI(Discord integration);
-    SD-->|Target image|D;
-
-    D-->S1(Attack server 1);
-    D-->S2(Attack server 2);
-    D-->S3(Attack server ...);
-```
+### Attack phase (~~Slack~~ Zulip integration)
 In the attack phase, Scrape bot will listen for new targets in the targets channel, and attempt to download and push the new design to the
 configured targets repository. The bot also maintains a forum channel for attack discussion and team-specific logging
 (like automated attack output).
@@ -90,7 +48,7 @@ configured targets repository. The bot also maintains a forum channel for attack
 ![image](https://github.com/user-attachments/assets/ad702c9f-02bc-4a47-a2e0-f78f586f7289)
 
 It will also queue automated attacks against the new target via the build server and submit any flags it finds. For
-eCTF 2025, this includes dispatching the pesky neighbor scenario automatically with a common attack:
+eCTF 2025, this included dispatching the pesky neighbor scenario automatically with a common attack:
 
 ![image](https://github.com/user-attachments/assets/cc7c8a73-3332-44ca-b63b-4fb06e0f583b)
 
@@ -105,7 +63,6 @@ displaying scoreboard reports, challenge listings, and a command for quick flag 
 ### Running locally
 First, create a `.env` that exports your Discord token and other required credentials:
 ```env
-// .env
 DISCORD_TOKEN="very-real-discord-token"
 
 ZULIP_USERNAME="...-bot@ectf.zulipchat.com"
@@ -130,7 +87,7 @@ AUTH_SECRET="..."
 - `CTFD_EMAIL` — the email of your team on CTFd.
 - `CTFD_PASSWORD` — the password of your team on CTFd.
 
-See **Zulip bot setup** for how to configure the required Slack secrets.
+See **Zulip bot setup** for how to configure the required Zulip secrets.
 
 Other configuration options are found in `config.ts` (you likely won't need to change these):
 - `SCOREBOARD_NOTIFY_CHANNEL_ID` — the discord channel to send scoreboard reports in.
@@ -144,7 +101,7 @@ Other configuration options are found in `config.ts` (you likely won't need to c
 - `SLACK_TARGET_CHANNEL_ID` — the Slack channel to listen for target drops in.
 
 - `EXPRESS_PORT` — the port to run the build-integration express server on.
-- `BOLT_PORT` — the port to run the Slack bot on.
+<!-- - `BOLT_PORT` — the port to run the Slack bot on. -->
 
 Then, install dependencies with `npm install` and run `npm start` to start the bot.
 
