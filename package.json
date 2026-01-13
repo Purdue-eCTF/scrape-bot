@@ -17,7 +17,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@b01lers/ctfd-api": "^1.2.1",
+    "@b01lers/ctfd-api": "^1.2.2",
     "@slack/bolt": "^4.2.1",
     "adm-zip": "^0.5.12",
     "async-lock": "^1.4.1",
@@ -25,6 +25,7 @@
     "cron": "^3.1.6",
     "discord.js": "^14.18.0",
     "express": "^5.0.1",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "zulip-js": "^2.1.0"
   }
 }
