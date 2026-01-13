@@ -1,4 +1,3 @@
-import { readdir } from 'node:fs/promises';
 import {
     AutocompleteInteraction,
     ChatInputCommandInteraction,
@@ -8,7 +7,6 @@ import {
 } from 'discord.js';
 
 
-// TODO
 export type Command = {
     data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder,
     execute: (interaction: ChatInputCommandInteraction) => Promise<any>,
