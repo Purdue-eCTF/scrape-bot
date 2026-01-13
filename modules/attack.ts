@@ -1,6 +1,5 @@
 import type { User } from 'discord.js';
 import { createConnection } from 'node:net';
-import { AUTH_SECRET } from '../auth';
 
 // Utils
 import { trySubmitFlag } from './challenges';
@@ -19,7 +18,7 @@ function initBuildServerAttackConn(method: BuildServerAttackMethod, ...params: s
         host: 'host.docker.internal',
         port: 8888
     }, () => {
-        socket.write(`${AUTH_SECRET}|${method}`);
+        socket.write(`${process.env.AUTH_SECRET}|${method}`);
         socket.once('data', () => socket.write(params.join('|')));
     });
 

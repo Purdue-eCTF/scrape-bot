@@ -103,28 +103,30 @@ displaying scoreboard reports, challenge listings, and a command for quick flag 
 ![misc](https://github.com/user-attachments/assets/61447a80-10d9-4673-bcff-f4b11caee11e)
 
 ### Running locally
-Create a file called `auth.ts` that exports your Discord token, Slack bot info, express / bolt.js server ports, and channel / message IDs:
-```ts
-// auth.ts
-export const DISCORD_TOKEN = 'very-real-discord-token';
+First, create a `.env` that exports your Discord token and other required credentials:
+```env
+// .env
+DISCORD_TOKEN="very-real-discord-token"
 
-export const SLACK_TOKEN = 'xoxp-very-real-slack-token';
-export const SLACK_SIGNING_SECRET = '...';
+SLACK_TOKEN="xoxp-very-real-slack-token"
+SLACK_SIGNING_SECRET="..."
 
-export const TARGETS_REPO_URL = 'https://username:token@github.com/Purdue-eCTF-2024/2024-Targets';
+TARGETS_REPO_URL="https://username:token@github.com/Purdue-eCTF-2024/2024-Targets"
 
-export const CTFD_EMAIL = '...';
-export const CTFD_PASSWORD = '...';
+CTFD_EMAIL="..."
+CTFD_PASSWORD="..."
+
+AUTH_SECRET="..."
 ```
-- `DISCORD_TOKEN` — the discord bot auth token.
+- `DISCORD_TOKEN` — your discord bot auth token.
 
-- `SLACK_TOKEN` — the Slack auth token.
-- `SLACK_SIGNING_SECRET` — the Slack signing secret.
+- `SLACK_TOKEN` — your Slack auth token.
+- `SLACK_SIGNING_SECRET` — your Slack signing secret.
 
 - `TARGETS_REPO_URL` — the GitHub URL to the targets repository to push new targets to. **If this is a private repository, make sure to include credentials with push access.**
 
-- `CTFD_EMAIL` — the email of the team on CTFd.
-- `CTFD_PASSWORD` — the password of the team on CTFd.
+- `CTFD_EMAIL` — the email of your team on CTFd.
+- `CTFD_PASSWORD` — the password of your team on CTFd.
 
 See **Slack bot setup** for how to configure the required Slack secrets.
 
@@ -154,7 +156,7 @@ To set up the Slack integration, create a new Slack app in the [Slack API portal
 
 ![image](https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/7e6d3a84-3d5f-46f3-a901-b08943ce64b8)
 
-After creating, you can copy your Slack token and signing secret into `auth.ts`.
+After creating, you can copy your Slack token and signing secret into `.env`.
 Then, add OAuth scopes in `OAuth & Permissions`; you'll need, at minimum, `channels:history`, `chat:write`, and `files:read`.
 
 ![image](https://github.com/Purdue-eCTF-2024/scrape-bot/assets/60120929/f9330ce2-c8d3-4b9d-9279-ab2c5b4bb90d)

@@ -1,10 +1,9 @@
 import { REST, Routes } from 'discord.js';
-import { DISCORD_TOKEN } from './auth';
 import commands from './commands';
 
 
 const clientId = '1199441161077674105';
-const rest = new REST().setToken(DISCORD_TOKEN);
+const rest = new REST().setToken(process.env.DISCORD_TOKEN!);
 
 (async () => {
     try {

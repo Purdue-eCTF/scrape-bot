@@ -1,11 +1,10 @@
 import { CTFdClient, ChallengeData } from '@b01lers/ctfd-api';
-import { CTFD_EMAIL, CTFD_PASSWORD } from '../auth';
 
 
 export const ctfdClient = new CTFdClient({
     url: 'https://ectf.ctfd.io/',
-    username: CTFD_EMAIL,
-    password: CTFD_PASSWORD,
+    username: process.env.CTFD_EMAIL!,
+    password: process.env.CTFD_PASSWORD!,
 })
 
 export let challenges: ChallengeData[] = [];

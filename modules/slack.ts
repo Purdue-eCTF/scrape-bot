@@ -16,7 +16,6 @@ import { formatAttackOutput, runAttacksOnLocalTarget } from './attack';
 import { trySubmitFlag } from './challenges';
 
 // Config
-import { SLACK_SIGNING_SECRET, SLACK_TOKEN, TARGETS_REPO_URL } from '../auth';
 import { SLACK_TARGET_CHANNEL_ID, SLACK_TEAM_CHANNEL_ID } from '../config';
 
 
@@ -37,8 +36,8 @@ type BaseMessage = {
 }
 
 export const slack = new App({
-    token: SLACK_TOKEN,
-    signingSecret: SLACK_SIGNING_SECRET,
+    token: process.env.SLACK_TOKEN!,
+    signingSecret: process.env.SLACK_SIGNING_SECRET!,
 });
 
 export const lock = new AsyncLock();
@@ -175,7 +174,7 @@ async function loadTargetFromSlackMessage(message: BaseMessage) {
 
         // Download zip and extract to temp dir
         const buf = await fetch(file.url_private_download!, {
-            headers: { Authorization: `Bearer ${SLACK_TOKEN}` },
+            headers: { Authorization: `Bearer ${process.env.SLACK_TOKEN}` },
         }).then((r) => r.arrayBuffer());
 
         const zip = new AdmZip(Buffer.from(buf));
@@ -250,7 +249,7 @@ export async function writePortsFile(name: string, ip: string, portLow: number, 
 export async function initTargetsRepo() {
     console.log('[GIT] Initializing targets repository');
     await execAsync(
-        `git clone ${TARGETS_REPO_URL} temp || (cd temp && git fetch && git pull --ff-only)`
+        `git clone ${process.env.TARGETS_REPO_URL} temp || (cd temp && git fetch && git pull --ff-only)`
     );
     console.log(await execAsync('cd temp && git status'));
 }

@@ -4,8 +4,8 @@
   "description": "Scrapes the eCTF scoreboard for rank changes.",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node index.ts",
-    "registerSlashCommands": "ts-node registerSlashCommands.ts"
+    "start": "node -r ts-node/register --env-file=.env index.ts",
+    "registerSlashCommands": "node -r ts-node/register --env-file=.env registerSlashCommands.ts"
   },
   "author": "ky28059",
   "license": "MIT",

@@ -1,5 +1,4 @@
 import { ActivityType, Client } from 'discord.js';
-import { DISCORD_TOKEN } from '../auth';
 
 
 const client = new Client({
@@ -20,4 +19,4 @@ client.once('ready', async () => {
     }
 });
 
-void client.login(DISCORD_TOKEN)
+void client.login(process.env.DISCORD_TOKEN!)
