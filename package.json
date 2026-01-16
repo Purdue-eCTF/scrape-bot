@@ -14,6 +14,7 @@
     "@types/async-lock": "^1.4.2",
     "@types/express": "^5.0.0",
     "@types/node": "^20.11.5",
+    "@types/unzip-stream": "^0.3.4",
     "typescript": "^5.9.3"
   },
   "dependencies": {
@@ -26,6 +27,7 @@
     "discord.js": "^14.18.0",
     "express": "^5.0.1",
     "ts-node": "^10.9.2",
+    "unzip-stream": "^0.3.4",
     "zulip-js": "^2.1.0"
   }
 }

@@ -1,7 +1,6 @@
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { AttachmentBuilder } from 'discord.js';
 import { App } from '@slack/bolt';
-import AdmZip from 'adm-zip';
 import AsyncLock from 'async-lock';
 
 // Utils
@@ -14,6 +13,7 @@ import {
 } from '../bot';
 import { formatAttackOutput, runAttacksOnLocalTarget } from './attack';
 import { trySubmitFlag } from './challenges';
+import { streamAndUnzip } from '../util/files';
 
 // Config
 import { SLACK_TARGET_CHANNEL_ID, SLACK_TEAM_CHANNEL_ID } from '../config';
@@ -173,12 +173,11 @@ async function loadTargetFromSlackMessage(message: BaseMessage) {
         await rm(teamFolder, { recursive: true, force: true });
 
         // Download zip and extract to temp dir
-        const buf = await fetch(file.url_private_download!, {
+        const res = await fetch(file.url_private_download!, {
             headers: { Authorization: `Bearer ${process.env.SLACK_TOKEN}` },
-        }).then((r) => r.arrayBuffer());
+        });
+        await streamAndUnzip(res, teamFolder);
 
-        const zip = new AdmZip(Buffer.from(buf));
-        zip.extractAllTo(teamFolder);
         console.log('[SLACK] Extracted', file.name);
     }
 
