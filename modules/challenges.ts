@@ -12,7 +12,11 @@ export let challenges: ChallengeData[] = [];
 export async function fetchAndUpdateChallenges() {
     console.log('[CHALL] Re-fetching eCTF challenges');
 
-    challenges = await ctfdClient.getChallenges();
+    try {
+        challenges = await ctfdClient.getChallenges();
+    } catch (e) {
+        console.error('Fetching CTFd challenges failed:', e);
+    }
 }
 
 const CHALLENGE_FORMATS = [

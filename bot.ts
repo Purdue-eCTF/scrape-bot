@@ -35,7 +35,6 @@ export const client = new Client({
 // Load commands
 client.commands = new Collection();
 for (const command of commands) {
-    console.log(`[DISC] Loaded /${command.data.name}`);
     client.commands.set(command.data.name, command);
 }
 
