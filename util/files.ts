@@ -1,6 +1,7 @@
 import { Readable } from 'node:stream';
 import AdmZip from 'adm-zip';
 import unzip from 'unzip-stream';
+import extract from 'extract-zip';
 
 
 export async function bufferAndUnzip(res: Response, dest: string) {
@@ -16,4 +17,13 @@ export async function streamAndUnzip(res: Response, dest: string) {
             .pipe(unzip.Extract({ path: dest }))
             .on('close', () => resolve());
     })
+}
+
+export async function bufferAndUnzipF(path: string, dest: string) {
+    const zip = new AdmZip(path);
+    zip.extractAllTo(dest);
+}
+
+export async function streamAndUnzipF(path: string, dest: string) {
+    await extract(path, { dir: dest })
 }

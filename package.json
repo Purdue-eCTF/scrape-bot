@@ -26,6 +26,7 @@
     "cron": "^3.1.6",
     "discord.js": "^14.18.0",
     "express": "^5.0.1",
+    "extract-zip": "^2.0.1",
     "ts-node": "^10.9.2",
     "unzip-stream": "^0.3.4",
     "zulip-js": "^2.1.0"

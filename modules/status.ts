@@ -27,8 +27,8 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
         return console.error('[BUILD] Could not find build status channel!');
 
     const message = channel.messages.cache.get(STATUS_MESSAGE_ID)
-        || await channel.messages.fetch(STATUS_MESSAGE_ID)
-        || channel.lastMessage;
+        ?? await channel.messages.fetch(STATUS_MESSAGE_ID)
+        ?? channel.lastMessage;
 
     const queueStatus = req.build.queue.map((d, i) => `${i + 1}. ${formatCommitShort(d)}`).join('\n')
         || '*No commits queued.*'
