@@ -13,7 +13,6 @@ import {
 } from '../bot';
 import { formatAttackOutput, runAttacksOnLocalTarget } from './attack';
 import { trySubmitFlag } from './challenges';
-import { streamAndUnzip } from '../util/files';
 
 // Config
 import { SLACK_TARGET_CHANNEL_ID, SLACK_TEAM_CHANNEL_ID } from '../config';
@@ -176,7 +175,8 @@ async function loadTargetFromSlackMessage(message: BaseMessage) {
         const res = await fetch(file.url_private_download!, {
             headers: { Authorization: `Bearer ${process.env.SLACK_TOKEN}` },
         });
-        await streamAndUnzip(res, teamFolder);
+        // await streamAndUnzip(res, teamFolder);
+        // TODO: impl enc/dec logic
 
         console.log('[SLACK] Extracted', file.name);
     }
