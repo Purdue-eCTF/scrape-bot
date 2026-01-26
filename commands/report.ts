@@ -18,7 +18,6 @@ export function generateReportEmbed() {
     const totalDiffs: string[] = [];
 
     for (const team of Object.values(scoreboard)) {
-        // Construct diff string if fields change
         const diffs: string[] = [];
 
         if (team.prevPoints !== team.points)
@@ -30,7 +29,10 @@ export function generateReportEmbed() {
             if (team.prevRank !== team.rank)
                 diffs.push(`[rank: ${team.prevRank} → ${team.rank}]`);
 
-            totalDiffs.push(`[${team.name}](${team.href}): ${diffs.join(' ')}`);
+            // For 2026: display only the team's shortened name, e.g.
+            // "University of California, Los Angeles - UCLA" -> "UCLA"
+            const shortName = team.name.split(' - ')[1];
+            totalDiffs.push(`[${shortName}](${team.href}): ${diffs.join(' ')}`);
         }
     }
 
