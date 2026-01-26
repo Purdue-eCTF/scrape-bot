@@ -1,10 +1,11 @@
-import { ActivityType, ChannelType, Client, Collection, CommandInteraction, EmbedBuilder } from 'discord.js';
+import { ActivityType, ChannelType, Client, Collection, EmbedBuilder } from 'discord.js';
 import { CronJob } from 'cron';
 
 // Modules
-import { fetchAndUpdateScoreboard, scoreboard } from './modules/scoreboard';
-import { Command, CommandGroup } from './util/commands';
 import commands from './commands';
+import { fetchAndUpdateScoreboard } from './modules/scoreboard';
+import { Command, CommandGroup } from './util/commands';
+import { generateReportEmbed } from './commands/report';
 
 // Config
 import {
@@ -39,41 +40,6 @@ for (const command of commands) {
 }
 
 let broadcastDiffsJob: CronJob;
-
-export async function broadcastDiffs(interaction?: CommandInteraction) {
-    const totalDiffs: string[] = [];
-
-    for (const team of Object.values(scoreboard)) {
-        // Construct diff string if fields change
-        const diffs: string[] = [];
-
-        if (team.prevPoints !== team.points)
-            diffs.push(`[points: ${team.prevPoints} → ${team.points}]`)
-
-        if (diffs.length) {
-            // Push rank only if other diffs already exist so that one team jumping 15 ranks doesn't cause
-            // 14 other lines of diffs.
-            if (team.prevRank !== team.rank)
-                diffs.push(`[rank: ${team.prevRank} → ${team.rank}]`);
-
-            totalDiffs.push(`[${team.name}](${team.href}): ${diffs.join(' ')}`);
-        }
-    }
-
-    const diffEmbed = new EmbedBuilder()
-        .setTitle(`eCTF scoreboard report for ${new Date().toLocaleDateString()}`)
-        .setDescription(totalDiffs.length ? totalDiffs.join('\n') : '*No scoreboard changes detected.*')
-        .setColor('#C61130')
-        .setTimestamp();
-
-    if (interaction)
-        return await interaction.reply({ embeds: [diffEmbed] });
-
-    const channel = client.channels.cache.get(SCOREBOARD_NOTIFY_CHANNEL_ID);
-    if (!channel?.isSendable()) return;
-
-    await channel.send({ embeds: [diffEmbed] });
-}
 
 export async function notifyTargetPush(name: string, ip: string, portLow: number, portHigh: number) {
     const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
@@ -164,7 +130,12 @@ client.once('ready', async () => {
     broadcastDiffsJob = CronJob.from({
         cronTime: '0 0 0 * * *',
         onTick: async () => {
-            await broadcastDiffs();
+            const channel = client.channels.cache.get(SCOREBOARD_NOTIFY_CHANNEL_ID);
+            if (channel?.isSendable()) {
+                const diffEmbed = generateReportEmbed();
+                await channel.send({ embeds: [diffEmbed] });
+            }
+
             await fetchAndUpdateScoreboard(true); // Reset diffs after each day
         },
         start: true,
