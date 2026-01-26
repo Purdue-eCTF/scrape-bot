@@ -1,6 +1,7 @@
 import type { Command } from '../util/commands';
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { scoreboard } from '../modules/scoreboard';
+import { truncateArr } from '../util/misc';
 
 
 export default {
@@ -36,9 +37,13 @@ export function generateReportEmbed() {
         }
     }
 
+    // Truncate long diffs to <= 4096 chars
+    const truncated = truncateArr(totalDiffs, 4096);
+
     return new EmbedBuilder()
         .setTitle(`eCTF scoreboard report for ${new Date().toLocaleDateString()}`)
-        .setDescription(totalDiffs.length ? totalDiffs.join('\n') : '*No scoreboard changes detected.*')
+        .setDescription(truncated.length ? truncated.join('\n') : '*No scoreboard changes detected.*')
+        .setFooter(truncated.length < totalDiffs.length ? { text: `${truncated.length} diffs shown of ${totalDiffs.length} total` } : null)
         .setColor('#C61130')
         .setTimestamp();
 }
