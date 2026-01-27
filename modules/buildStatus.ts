@@ -5,7 +5,7 @@ import { client } from '../bot';
 import { DESIGN_REPO_URL, FAILURE_CHANNEL_ID, STATUS_CHANNEL_ID, STATUS_MESSAGE_ID } from '../config';
 
 
-async function updateBuildStatus(req: BuildStatusUpdateReq) {
+async function updateBuildStatus(req: BuildStatusUpdateBody) {
     const channel = client.channels.cache.get(STATUS_CHANNEL_ID);
     if (!channel?.isSendable())
         return console.error('[BUILD] Could not find build status channel!');
@@ -53,13 +53,13 @@ async function updateBuildStatus(req: BuildStatusUpdateReq) {
             failureChannel.send({ embeds: [failureEmbed] })
     }
 
-    if (!message?.editable) return channel.send({ embeds: [statusEmbed] });
+    if (!message?.editable) return channel.send({ embeds: [statusEmbed] }); // TODO
     return message.edit({ embeds: [statusEmbed] });
 }
 
 type ActionStatus = 'SUCCESS' | 'TESTING' | 'BUILDING' | 'BUILD_PENDING' | 'TEST_PENDING' | 'BUILD_FAILED' | 'TEST_FAILED';
 
-type ActionResult = {
+type ActionInfo = {
     status: ActionStatus,
     commit: {
         hash: string,
@@ -70,12 +70,12 @@ type ActionResult = {
     start: number // epoch s
 }
 
-type BuildStatusUpdateReq = { // <- This is the type of the object published by Build Server whenever anything changes
-    active: ActionResult[],
-    queue: ActionResult[]
+type BuildStatusUpdateBody = {
+    active: ActionInfo[],
+    queue: ActionInfo[]
 }
 
-function formatActionShort(c: ActionResult) {
+function formatActionShort(c: ActionInfo) {
     const runHref = `${DESIGN_REPO_URL}/actions/runs/${c.commit.runId}`;
     const ts = Math.floor(c.start);
 
