@@ -30,14 +30,17 @@ async function updateBoardStatus(req: BoardStatus[]) {
 type BoardStatus = {
     name: string,
     user: string | null,
-    online: boolean
+    online: boolean,
+    type: 'DEV' | 'ATTACK'
 }
 
 function formatBoardShort(c: BoardStatus) {
-    if (!c.online)
-        return `\\🔴 [\`${c.name}\`] offline`;
-    if (c.user !== null)
-        return `\\🟡 [\`${c.name}\`] in use by user \`${c.user}\``;
+    const name = `\`${c.name}\` [\`${c.type}\`]`;
 
-    return `\\🟢 [\`${c.name}\`] available`;
+    if (!c.online)
+        return `\\🔴 ${name} offline`;
+    if (c.user !== null)
+        return `\\🟡 ${name} in use by user \`${c.user}\``;
+
+    return `\\🟢 ${name} available`;
 }

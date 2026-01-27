@@ -36,7 +36,7 @@ async function updateBuildStatus(req: BuildStatusUpdateBody) {
         .setColor(status ? statusToColor(status) : '#27272a')
         .setTimestamp()
 
-    // Report all build / test failures to the appropriate channel;  this assumes that each
+    // Report all build / test failures to the appropriate channel; this assumes that each
     // build / test failure is sent only once to Tom.
     const failures = req.active.filter((r) => r.status === 'BUILD_FAILED' || r.status === 'TEST_FAILED');
     for (const failed of failures) {

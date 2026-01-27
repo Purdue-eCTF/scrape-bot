@@ -1,6 +1,5 @@
 export const DESIGN_REPO_URL = 'https://github.com/Purdue-eCTF/2025-eCTF-design'
 
-export const EXPRESS_PORT = 8080;
 // export const BOLT_PORT = 8081;
 
 export const SCOREBOARD_NOTIFY_CHANNEL_ID = '1439055452867661855';

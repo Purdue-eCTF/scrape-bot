@@ -100,7 +100,6 @@ Other configuration options are found in `config.ts` (you likely won't need to c
 
 - `SLACK_TARGET_CHANNEL_ID` — the Slack channel to listen for target drops in.
 
-- `EXPRESS_PORT` — the port to run the build-integration express server on.
 <!-- - `BOLT_PORT` — the port to run the Slack bot on. -->
 
 Then, install dependencies with `npm install` and run `npm start` to start the bot.
