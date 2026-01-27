@@ -12,7 +12,6 @@
   "devDependencies": {
     "@types/adm-zip": "^0.5.5",
     "@types/async-lock": "^1.4.2",
-    "@types/express": "^5.0.0",
     "@types/node": "^20.11.5",
     "typescript": "^5.9.3"
   },
@@ -21,10 +20,8 @@
     "@slack/bolt": "^4.2.1",
     "adm-zip": "^0.5.12",
     "async-lock": "^1.4.1",
-    "body-parser": "^1.20.2",
     "cron": "^3.1.6",
     "discord.js": "^14.18.0",
-    "express": "^5.0.1",
     "node-stream-zip": "^1.15.0",
     "ts-node": "^10.9.2",
     "zulip-js": "^2.1.0"
