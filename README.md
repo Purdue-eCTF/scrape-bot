@@ -100,6 +100,9 @@ Other configuration options are found in `config.ts` (you likely won't need to c
 
 - `SLACK_TARGET_CHANNEL_ID` — the Slack channel to listen for target drops in.
 
+- `BUILD_STATUS_PORT` — the port to subscribe to build status messages on (see above diagram).
+- `PROV_STATUS_PORT` — the port to subscribe to board status messages on (see above diagram).
+
 <!-- - `BOLT_PORT` — the port to run the Slack bot on. -->
 
 Then, install dependencies with `npm install` and run `npm start` to start the bot.
