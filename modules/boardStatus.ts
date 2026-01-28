@@ -1,9 +1,21 @@
+import { Subscriber } from 'zeromq';
 import { EmbedBuilder } from 'discord.js';
 import { client } from '../bot';
 
 // Config
-import { STATUS_CHANNEL_ID, STATUS_MESSAGE_ID } from '../config';
+import { PROV_STATUS_PORT, STATUS_CHANNEL_ID, STATUS_MESSAGE_ID } from '../config';
 
+
+export async function initBoardStatusSubscription() {
+    const sock = new Subscriber();
+
+    sock.connect(`tcp://127.0.0.1:${PROV_STATUS_PORT}`);
+    sock.subscribe();
+
+    for await (const msg of sock) {
+        console.log('board', msg); // TODO
+    }
+}
 
 async function updateBoardStatus(req: BoardStatus[]) {
     const channel = client.channels.cache.get(STATUS_CHANNEL_ID);
@@ -24,7 +36,7 @@ async function updateBoardStatus(req: BoardStatus[]) {
         .setTimestamp()
 
     if (!message?.editable) return channel.send({ embeds: [statusEmbed] }); // TODO
-    return message.edit({ embeds: [statusEmbed] });
+    return message.edit({ embeds: [message.embeds[0], statusEmbed] });
 }
 
 type BoardStatus = {

@@ -1,9 +1,27 @@
+import { Subscriber } from 'zeromq';
 import { EmbedBuilder } from 'discord.js';
 import { client } from '../bot';
 
 // Config
-import { DESIGN_REPO_URL, FAILURE_CHANNEL_ID, STATUS_CHANNEL_ID, STATUS_MESSAGE_ID } from '../config';
+import {
+    BUILD_STATUS_PORT,
+    DESIGN_REPO_URL,
+    FAILURE_CHANNEL_ID,
+    STATUS_CHANNEL_ID,
+    STATUS_MESSAGE_ID
+} from '../config';
 
+
+export async function initBuildStatusSubscription() {
+    const sock = new Subscriber();
+
+    sock.connect(`tcp://127.0.0.1:${BUILD_STATUS_PORT}`);
+    sock.subscribe();
+
+    for await (const msg of sock) {
+        console.log('build', msg); // TODO
+    }
+}
 
 async function updateBuildStatus(req: BuildStatusUpdateBody) {
     const channel = client.channels.cache.get(STATUS_CHANNEL_ID);
@@ -53,8 +71,8 @@ async function updateBuildStatus(req: BuildStatusUpdateBody) {
             failureChannel.send({ embeds: [failureEmbed] })
     }
 
-    if (!message?.editable) return channel.send({ embeds: [statusEmbed] }); // TODO
-    return message.edit({ embeds: [statusEmbed] });
+    if (!message?.editable) return channel.send({ embeds: [statusEmbed] });
+    return message.edit({ embeds: [statusEmbed, message.embeds[1]] });
 }
 
 type ActionStatus = 'SUCCESS' | 'TESTING' | 'BUILDING' | 'BUILD_PENDING' | 'TEST_PENDING' | 'BUILD_FAILED' | 'TEST_FAILED';

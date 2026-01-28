@@ -21,9 +21,10 @@
     "adm-zip": "^0.5.12",
     "async-lock": "^1.4.1",
     "cron": "^3.1.6",
-    "discord.js": "^14.18.0",
+    "discord.js": "^14.25.1",
     "node-stream-zip": "^1.15.0",
     "ts-node": "^10.9.2",
+    "zeromq": "^6.5.0",
     "zulip-js": "^2.1.0"
   }
 }
