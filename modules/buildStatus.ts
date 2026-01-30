@@ -15,7 +15,7 @@ import {
 export async function initBuildStatusSubscription() {
     const sock = new Subscriber();
 
-    sock.connect(`tcp://127.0.0.1:${BUILD_STATUS_PORT}`);
+    sock.connect(`tcp://build_server:${BUILD_STATUS_PORT}`);
     sock.subscribe();
 
     for await (const msg of sock) {
