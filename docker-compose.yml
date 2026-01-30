@@ -13,3 +13,4 @@ services:
             - infra
 networks:
     infra:
+        external: true
