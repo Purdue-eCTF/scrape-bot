@@ -9,6 +9,8 @@ import { PROV_STATUS_PORT, STATUS_CHANNEL_ID, STATUS_MESSAGE_ID } from '../confi
 export async function initBoardStatusSubscription() {
     const sock = new Subscriber();
 
+    sock.plainUsername = 'user';
+    sock.plainPassword = process.env.AUTH_SECRET!;
     sock.connect(`tcp://provision_server:${PROV_STATUS_PORT}`);
     sock.subscribe();
 
