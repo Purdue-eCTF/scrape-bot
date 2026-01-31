@@ -2,7 +2,7 @@ import type { Subcommand } from '../../util/commands';
 import { SlashCommandSubcommandBuilder } from 'discord.js';
 
 // Utils
-import { loadTargetFromSlackUrl } from '../../modules/slack';
+// import { loadTargetFromSlackUrl } from '../../modules/slack';
 import { textEmbed } from '../../util/embeds';
 
 
@@ -19,7 +19,8 @@ export default {
         const url = interaction.options.getString('url', true);
         await interaction.deferReply();
 
-        await loadTargetFromSlackUrl(url);
+        // TODO
+        // await loadTargetFromSlackUrl(url);
         return interaction.editReply({ embeds: [textEmbed('Loaded new target.')] });
     }
 } satisfies Subcommand;

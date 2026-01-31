@@ -123,7 +123,7 @@ export async function broadcastPeskySubmit(team: string, message: string) {
     await channel.send({ embeds: [pushEmbed] });
 }
 
-client.once('ready', async () => {
+client.once('clientReady', async () => {
     console.log(`[DISC] Logged in as ${client.user?.tag}!`);
 
     // Broadcast diffs daily

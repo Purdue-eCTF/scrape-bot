@@ -4,8 +4,9 @@ import challenges from './challenges';
 import report from './report';
 import scoreboard from './scoreboard';
 import submit from './submit';
+import submitGroup from './submit/index';
 import attack from './attack';
 import load from './load';
 
-const commands: (Command | CommandGroup)[] = [challenges, report, scoreboard, submit, attack, load];
+const commands: (Command | CommandGroup)[] = [challenges, report, scoreboard, submit, attack, load, submitGroup];
 export default commands;

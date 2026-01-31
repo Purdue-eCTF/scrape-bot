@@ -2,9 +2,9 @@ import type { Subcommand } from '../../util/commands';
 import { EmbedBuilder, SlashCommandSubcommandBuilder } from 'discord.js';
 
 // Utils
-import { lock, writePortsFile } from '../../modules/slack';
+// import { lock, writePortsFile } from '../../modules/slack';
 import { execAsync } from '../../util/exec';
-import { updateInfoForTeam } from '../../bot';
+// import { updateInfoForTeam } from '../../bot';
 import { autocompleteTargets } from '../../util/autocomplete';
 
 
@@ -36,12 +36,13 @@ export default {
         const portLow = interaction.options.getInteger('port_low', true);
         const portHigh = interaction.options.getInteger('port_high', true);
 
-        await updateInfoForTeam(target, ip, portLow, portHigh);
+        // TODO
+        // await updateInfoForTeam(target, ip, portLow, portHigh);
 
-        await writePortsFile(target, ip, portLow, portHigh);
-        await lock.acquire('git', async () => {
-            await execAsync(`cd temp && git pull --ff-only && git add "${target}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Update ports for ${target}" && git push`);
-        });
+        // await writePortsFile(target, ip, portLow, portHigh);
+        // await lock.acquire('git', async () => {
+        //     await execAsync(`cd temp && git pull --ff-only && git add "${target}/" && git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Update ports for ${target}" && git push`);
+        // });
 
         const successEmbed = new EmbedBuilder()
             .setDescription('Successfully updated target info.')
