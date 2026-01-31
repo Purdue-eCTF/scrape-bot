@@ -20,8 +20,13 @@ export async function initBuildStatusSubscription() {
     sock.connect(`tcp://build_server:${BUILD_STATUS_PORT}`);
     sock.subscribe();
 
-    for await (const msg of sock) {
-        console.log('build', msg); // TODO
+    for await (const [msg] of sock) {
+        try {
+            const parsed = JSON.parse(msg.toString()) as BuildStatusUpdateBody;
+            await updateBuildStatus(parsed);
+        } catch (e) {
+            console.error('Malformed build status message', e);
+        }
     }
 }
 

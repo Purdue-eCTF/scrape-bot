@@ -14,8 +14,13 @@ export async function initBoardStatusSubscription() {
     sock.connect(`tcp://provision_server:${PROV_STATUS_PORT}`);
     sock.subscribe();
 
-    for await (const msg of sock) {
-        console.log('board', msg); // TODO
+    for await (const [msg] of sock) {
+        try {
+            const parsed = JSON.parse(msg.toString()) as BoardStatus[];
+            await updateBoardStatus(parsed);
+        } catch (e) {
+            console.error('Malformed board status message', e);
+        }
     }
 }
 
