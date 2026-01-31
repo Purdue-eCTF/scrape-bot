@@ -38,12 +38,12 @@ export async function submitTeamPhoto(name: string, raw: Blob) {
         headers: { Authorization: `Bearer ${process.env.ETCF_API_TOKEN}` },
         body: data
     });
-    const out = await res.json();
+    const out = await res.json() as { detail: string } | { flag_hex: string };
 
-    console.log(res);
-    console.log(out);
+    if ('detail' in out)
+        return { detail: out.detail, status: res.status }
 
-    // TODO
+    return out;
 }
 
 export async function submitDesignDoc(name: string, raw: Blob) {
@@ -55,10 +55,10 @@ export async function submitDesignDoc(name: string, raw: Blob) {
         headers: { Authorization: `Bearer ${process.env.ETCF_API_TOKEN}` },
         body: data
     });
-    const out = await res.json();
+    const out = await res.json() as { detail: string } | { flag_hex: string };
 
-    console.log(res);
-    console.log(out);
+    if ('detail' in out)
+        return { detail: out.detail, status: res.status }
 
-    // TODO
+    return out;
 }

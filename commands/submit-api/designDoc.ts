@@ -1,6 +1,6 @@
 import type { Subcommand } from '../../util/commands';
-import { EmbedBuilder, SlashCommandBuilder, SlashCommandSubcommandBuilder } from 'discord.js';
-import { challenges, ctfdClient, wrapFlagForChallenge } from '../../modules/challenges';
+import { EmbedBuilder, SlashCommandSubcommandBuilder } from 'discord.js';
+import { challenges, ctfdClient } from '../../modules/challenges';
 import { submitDesignDoc } from '../../util/api';
 
 
@@ -19,18 +19,27 @@ export default {
 
         const res = await submitDesignDoc(doc.name, raw);
 
-        const challs = challenges.filter((c) => c.name.startsWith('Design Document'));
-        for (const c of challs) {
-            // ...
+        const resEmbed = new EmbedBuilder()
+            .setTitle('Design doc submission')
+            .setColor('#C61130')
+            .setTimestamp();
+
+        if ('detail' in res) {
+            resEmbed.setDescription(`Submission failed with status \`${res.status}\`:\n\`\`\`${res.detail}\`\`\``);
+            return interaction.reply({ embeds: [resEmbed] });
         }
 
-        // const res = await ctfdClient.submitFlag(id, flag);
+        resEmbed.setDescription(`Submitted successfully with flag:\n\`\`\`${res.flag_hex}\`\`\``);
 
-        // const submitEmbed = new EmbedBuilder()
-        //     .setTitle('Team photo submission')
-        //     .setDescription(`**Flag:** \`${flag}\`\n**Status:** ${res.status}\n**Message:** ${res.message}`)
-        //     .setColor('#C61130')
-        //     .setTimestamp();
-        // return interaction.reply({ embeds: [submitEmbed] });
+        const challs = challenges.filter((c) => c.name.startsWith('Design Document'));
+        for (const c of challs) {
+            const r = await ctfdClient.submitFlag(c.id, res.flag_hex);
+            resEmbed.addFields({
+                name: c.name,
+                value: `**Message:** ${r.message} (\`${r.status}\`)`
+            });
+        }
+
+        return interaction.reply({ embeds: [resEmbed] });
     }
 } satisfies Subcommand;
