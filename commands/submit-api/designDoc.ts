@@ -1,6 +1,7 @@
 import type { Subcommand } from '../../util/commands';
 import { EmbedBuilder, SlashCommandBuilder, SlashCommandSubcommandBuilder } from 'discord.js';
 import { challenges, ctfdClient, wrapFlagForChallenge } from '../../modules/challenges';
+import { submitDesignDoc } from '../../util/api';
 
 
 export default {
@@ -14,13 +15,15 @@ export default {
 
     async execute(interaction) {
         const doc = interaction.options.getAttachment('doc', true);
-        const raw = await fetch(doc.url).then(res => res.arrayBuffer());
+        const raw = await fetch(doc.url).then(res => res.blob());
 
-        console.log(raw);
+        const res = await submitDesignDoc(doc.name, raw);
 
-        // const challName = challenges.find((c) => c.id === id)!.name;
+        const challs = challenges.filter((c) => c.name.startsWith('Design Document'));
+        for (const c of challs) {
+            // ...
+        }
 
-        // const flag = wrapFlagForChallenge(challName, interaction.options.getString('flag', true));
         // const res = await ctfdClient.submitFlag(id, flag);
 
         // const submitEmbed = new EmbedBuilder()

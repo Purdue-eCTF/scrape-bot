@@ -1,6 +1,7 @@
 import type { Subcommand } from '../../util/commands';
 import { EmbedBuilder, SlashCommandBuilder, SlashCommandSubcommandBuilder } from 'discord.js';
 import { challenges, ctfdClient, wrapFlagForChallenge } from '../../modules/challenges';
+import { submitTeamPhoto } from '../../util/api';
 
 
 export default {
@@ -14,13 +15,15 @@ export default {
 
     async execute(interaction) {
         const photo = interaction.options.getAttachment('photo', true);
-        const raw = await fetch(photo.url).then(res => res.arrayBuffer());
+        const raw = await fetch(photo.url).then(res => res.blob());
 
-        console.log(raw);
+        const res = await submitTeamPhoto(photo.name, raw);
 
-        // const challName = challenges.find((c) => c.id === id)!.name;
+        const challId = challenges.find((c) => c.name === 'Team Photo');
+        if (!challId) {
+            // ...
+        }
 
-        // const flag = wrapFlagForChallenge(challName, interaction.options.getString('flag', true));
         // const res = await ctfdClient.submitFlag(id, flag);
 
         // const submitEmbed = new EmbedBuilder()
