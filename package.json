@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@b01lers/ctfd-api": "^1.2.2",
+    "@ky28059/zulip-js": "^2.1.0",
     "@slack/bolt": "^4.2.1",
     "adm-zip": "^0.5.12",
     "async-lock": "^1.4.1",
@@ -26,7 +27,6 @@
     "discord.js": "^14.25.1",
     "node-stream-zip": "^1.15.0",
     "ts-node": "^10.9.2",
-    "zeromq": "^6.5.0",
-    "zulip-js": "^2.1.0"
+    "zeromq": "^6.5.0"
   }
 }

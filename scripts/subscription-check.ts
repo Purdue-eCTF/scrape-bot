@@ -1,5 +1,5 @@
 // @ts-ignore
-import zulipInit from 'zulip-js';
+import zulipInit from '@ky28059/zulip-js';
 
 
 ;(async () => {
