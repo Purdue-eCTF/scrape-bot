@@ -13,7 +13,7 @@ const client = new Client({
     allowedMentions: { repliedUser: false }
 });
 
-client.once('ready', async () => {
+client.once('clientReady', async () => {
     for (const g of client.guilds.cache.values()) {
         console.log(g.id, g.name);
     }

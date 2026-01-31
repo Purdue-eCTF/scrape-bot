@@ -119,7 +119,27 @@ To set up the Zulip integration, create a new Zulip bot in the **Settings > Bots
 
 ![image](https://github.com/user-attachments/assets/b0319bb6-0e57-4d0c-9297-dd31f8633673)
 
-Then, you can obtain the required `.env` values from the Zuliprc configuration file in **Manage bot**.
+Then, you can obtain the required `.env` values from the `.zuliprc` configuration file in **Manage bot**.
+
+To subscribe the bot to a channel, note that the **Manage bot > channels** interface will currently always throw an
+error for bot users. Instead, you can add them from the **Channel settings > subscribers** interface like below:
+
+![image](https://github.com/user-attachments/assets/bc7bdf57-ffc0-4b51-9178-0251e4f0552d)
+
+For future reference, note that there is currently no way to delete a bot (see [GH issue](https://github.com/zulip/zulip/issues/10088));
+instead, bots can be *deactivated*, but deactivated bots can still be listed in the bots interface and reserve their
+`*-bot@*.zulipchat.com` emails.
+
+Further, when reactivating a bot, you'll also need to regenerate the bot's `ZULIP_API_KEY`
+(despite not being mentioned in the [docs](https://zulip.com/help/deactivate-or-reactivate-a-bot)). Otherwise, all
+requests to the API will fail with
+```js
+{
+  result: 'error',
+  msg: 'Account is deactivated',
+  code: 'UNAUTHORIZED'
+}
+```
 
 ### Slack bot setup (2025)
 To set up the Slack integration, create a new Slack app in the [Slack API portal](https://api.slack.com/apps).

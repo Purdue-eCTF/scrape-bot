@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node -r ts-node/register --env-file=.env index.ts",
-    "registerSlashCommands": "node -r ts-node/register --env-file=.env registerSlashCommands.ts"
+    "registerSlashCommands": "node -r ts-node/register --env-file=.env registerSlashCommands.ts",
+    "inspect:zulip": "node -r ts-node/register --env-file=.env scripts/subscription-check.ts",
+    "inspect:servers": "node -r ts-node/register --env-file=.env scripts/server-check.ts"
   },
   "author": "ky28059",
   "license": "MIT",
