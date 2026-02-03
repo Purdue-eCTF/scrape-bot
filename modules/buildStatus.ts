@@ -15,8 +15,8 @@ import {
 export async function initBuildStatusSubscription() {
     const sock = new Subscriber();
 
-    // sock.plainUsername = 'user';
-    // sock.plainPassword = process.env.AUTH_SECRET!;
+    sock.plainUsername = 'user';
+    sock.plainPassword = process.env.AUTH_SECRET!;
     sock.connect(`tcp://build_server:${BUILD_STATUS_PORT}`);
     sock.subscribe();
 
