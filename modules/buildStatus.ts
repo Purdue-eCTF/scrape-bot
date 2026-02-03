@@ -23,6 +23,7 @@ export async function initBuildStatusSubscription() {
     for await (const [msg] of sock) {
         try {
             const parsed = JSON.parse(msg.toString()) as BuildStatusUpdateBody;
+            console.log(parsed);
             await updateBuildStatus(parsed);
         } catch (e) {
             console.error('Malformed build status message', e);

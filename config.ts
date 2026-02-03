@@ -1,4 +1,4 @@
-export const DESIGN_REPO_URL = 'https://github.com/Purdue-eCTF/2025-eCTF-design'
+export const DESIGN_REPO_URL = 'https://github.com/Purdue-eCTF/2026-eCTF-design'
 
 export const BUILD_STATUS_PORT = 8131;
 export const PROV_STATUS_PORT = 8130;
