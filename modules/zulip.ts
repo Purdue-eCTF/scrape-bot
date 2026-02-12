@@ -5,6 +5,7 @@ import { ChannelType, GuildForumTag } from 'discord.js';
 // Utils
 import { client } from '../bot';
 import { gravatarUrl } from '../util/gravatar';
+import { truncate } from '../util/misc';
 
 
 const WEBHOOK_NAME = 'zulip-mirror'
@@ -50,7 +51,7 @@ export async function initZulipClient() {
             ?? await forum.createWebhook({ name: WEBHOOK_NAME });
 
         await hook.send({
-            content: e.message.content,
+            content: truncate(e.message.content, 2000, '...\n\n-# Message truncated; view full message on Zulip'),
             username: e.message.sender_full_name,
             avatarURL: e.message.avatar_url ?? gravatarUrl(e.message.sender_email),
             threadId: thread.id,

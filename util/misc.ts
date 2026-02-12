@@ -1,6 +1,6 @@
-export function truncate(str: string, len: number) {
+export function truncate(str: string, len: number, end: string = '...') {
     if (str.length <= len) return str;
-    return str.slice(0, len - 3).trimEnd() + '...';
+    return str.slice(0, len - end.length).trimEnd() + end;
 }
 
 export function truncateArr(arr: string[], len: number) {
