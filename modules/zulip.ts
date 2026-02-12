@@ -1,6 +1,6 @@
 // @ts-ignore
 import zulipInit from '@ky28059/zulip-js';
-import { ChannelType } from 'discord.js';
+import { ChannelType, GuildForumTag } from 'discord.js';
 
 // Utils
 import { client } from '../bot';
@@ -21,17 +21,30 @@ export async function initZulipClient() {
 
         console.log(e.message);
 
+        // Mirror selected zulip channels to discord
         const category = client.channels.cache.get('1470601140113506407');
         if (category?.type !== ChannelType.GuildCategory) return;
 
         const name = e.message.display_recipient.toLowerCase().replaceAll(' ', '-');
-        const topic = e.message.subject;
+        const topic = e.message.subject.replace(/^✔ /, '');
+        const resolved = e.message.subject.startsWith('✔ ');
 
         const forum = category.children.cache.find((v) => v.name === name);
         if (forum?.type !== ChannelType.GuildForum) return;
 
         const thread = forum.threads.cache.find((t) => t.name === topic)
             ?? await forum.threads.create({ name: topic, message: { content: '*[Zulip mirror truncated above this point]*' } });
+
+        // Mirror the resolved status of the topic as a discord forum channel tag
+        if (resolved) {
+            const resTag: GuildForumTag = forum.availableTags.find((t) => t.name === 'Resolved')
+                ?? await forum.setAvailableTags([{ name: 'Resolved', emoji: { id: null, name: '✅' }, moderated: true }])
+                    .then(f => f.availableTags.find((t) => t.name === 'Resolved')!);
+
+            await thread.setAppliedTags([resTag.id]);
+        } else if (thread.appliedTags.length > 0) {
+            await thread.setAppliedTags([]);
+        }
 
         const hook = (await forum.fetchWebhooks()).find((v) => v.name === WEBHOOK_NAME)
             ?? await forum.createWebhook({ name: WEBHOOK_NAME });
