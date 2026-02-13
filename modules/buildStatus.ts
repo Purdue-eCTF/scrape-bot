@@ -105,7 +105,7 @@ function formatActionShort(c: ActionInfo) {
     const runHref = `${DESIGN_REPO_URL}/actions/runs/${c.commit.runId}`;
     const ts = Math.floor(c.start);
 
-    return `\\${statusToCircle(c.status)} [[\`${c.commit.hash.slice(0, 7)}\`]](${runHref}): ${c.commit.name} (@${c.commit.author}) updated <t:${ts}:R>`;
+    return `\\${statusToCircle(c.status)} [[\`${c.commit.hash.slice(0, 7)}\`]](${runHref}): ${c.commit.name} (@${c.commit.author}) updated <t:${ts}:R> with status *${c.status}*`;
 }
 
 function statusToColor(status: ActionStatus) {
