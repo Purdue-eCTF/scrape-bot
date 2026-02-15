@@ -22,7 +22,7 @@ export default {
         const challName = challenges.find((c) => c.id === id)!.name;
 
         const flag = wrapFlagForChallenge(challName, interaction.options.getString('flag', true));
-        const res = await ctfd.submitFlag(id, flag);
+        const res = await ctfd.challenges.submitFlag(id, flag);
 
         const submitEmbed = new EmbedBuilder()
             .setTitle(`Flag submission for \`${challName}\``)

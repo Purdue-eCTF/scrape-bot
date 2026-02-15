@@ -20,26 +20,11 @@ export async function fetchAndUpdateChallenges() {
 }
 
 const CHALLENGE_FORMATS = [
-    {
-        name: "Expired Subscription",
-        prefix: "expired_",
-    },
-    {
-        name: "Pirated Subscription",
-        prefix: "pirate_",
-    },
-    {
-        name: "No Subscription",
-        prefix: "nosub_",
-    },
-    {
-        name: "Recording Playback",
-        prefix: "recording_"
-    },
-    {
-        name: "Pesky Neighbor",
-        prefix: "neighbor_",
-    }
+    { name: "Steal Design", prefix: "steal_" },
+    { name: "Read Update", prefix: "update_" },
+    { name: "Read Design", prefix: "design_" },
+    { name: "Compromise Machine", prefix: "compromise_" },
+    { name: "Backdoored Design", prefix: "backdoor_" }
 ];
 
 export function wrapFlagForChallenge(challengeName: string, flag: string) {
