@@ -1,4 +1,4 @@
-import { ctfdClient } from './challenges';
+import { ctfd } from './challenges';
 
 
 type TeamData = {
@@ -17,7 +17,7 @@ export async function fetchAndUpdateScoreboard(resetDiffs: boolean = false) {
     console.log('[SCORE] Re-fetching eCTF scoreboard');
 
     try {
-        const entries = await ctfdClient.getScoreboard();
+        const entries = await ctfd.scoreboard.get();
         lastUpdated = new Date();
 
         for (const { pos, name, score, account_url } of entries) {

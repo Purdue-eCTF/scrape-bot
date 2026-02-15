@@ -1,6 +1,6 @@
 import type { Subcommand } from '../../util/commands';
 import { EmbedBuilder, SlashCommandSubcommandBuilder } from 'discord.js';
-import { challenges, ctfdClient } from '../../modules/challenges';
+import { challenges, ctfd } from '../../modules/challenges';
 import { submitDesignDoc } from '../../util/api';
 
 
@@ -33,7 +33,7 @@ export default {
 
         const challs = challenges.filter((c) => c.name.startsWith('Design Document'));
         for (const c of challs) {
-            const r = await ctfdClient.submitFlag(c.id, res.flag_hex);
+            const r = await ctfd.challenges.submitFlag(c.id, res.flag_hex);
             resEmbed.addFields({
                 name: c.name,
                 value: `**Message:** ${r.message} (\`${r.status}\`)`

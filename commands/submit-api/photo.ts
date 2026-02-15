@@ -1,6 +1,6 @@
 import type { Subcommand } from '../../util/commands';
 import { EmbedBuilder, SlashCommandSubcommandBuilder } from 'discord.js';
-import { challenges, ctfdClient } from '../../modules/challenges';
+import { challenges, ctfd } from '../../modules/challenges';
 import { submitTeamPhoto } from '../../util/api';
 
 
@@ -33,7 +33,7 @@ export default {
 
         const chall = challenges.find((c) => c.name === 'Team Photo');
         if (chall) {
-            const r = await ctfdClient.submitFlag(chall.id, res.flag_hex);
+            const r = await ctfd.challenges.submitFlag(chall.id, res.flag_hex);
             resEmbed.addFields({
                 name: chall.name,
                 value: `**Message:** ${r.message} (\`${r.status}\`)`

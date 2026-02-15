@@ -1,6 +1,6 @@
 import type { Command } from '../util/commands';
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { challenges, ctfdClient, wrapFlagForChallenge } from '../modules/challenges';
+import { challenges, ctfd, wrapFlagForChallenge } from '../modules/challenges';
 
 
 export default {
@@ -22,7 +22,7 @@ export default {
         const challName = challenges.find((c) => c.id === id)!.name;
 
         const flag = wrapFlagForChallenge(challName, interaction.options.getString('flag', true));
-        const res = await ctfdClient.submitFlag(id, flag);
+        const res = await ctfd.submitFlag(id, flag);
 
         const submitEmbed = new EmbedBuilder()
             .setTitle(`Flag submission for \`${challName}\``)
