@@ -16,7 +16,7 @@ export async function initBoardStatusSubscription() {
 
     for await (const [msg] of sock) {
         try {
-            const parsed = JSON.parse(msg.toString()) as BoardStatus[];
+            const parsed = JSON.parse(msg.toString()) as BoardStatusUpdateBody;
             await updateBoardStatus(parsed);
         } catch (e) {
             console.error('Malformed board status message', e);
@@ -24,7 +24,7 @@ export async function initBoardStatusSubscription() {
     }
 }
 
-async function updateBoardStatus(req: BoardStatus[]) {
+async function updateBoardStatus(req: BoardStatusUpdateBody) {
     const channel = client.channels.cache.get(STATUS_CHANNEL_ID);
     if (!channel?.isSendable())
         return console.error('[BUILD] Could not find build status channel!');
@@ -33,12 +33,17 @@ async function updateBoardStatus(req: BoardStatus[]) {
         ?? await channel.messages.fetch(STATUS_MESSAGE_ID)
         ?? channel.lastMessage;
 
-    const boardStatus = req.map((d, i) => `${i + 1}. ${formatBoardShort(d)}`).join('\n')
+    const boardStatus = req.boards.map((d, i) => `${i + 1}. ${formatBoardShort(d)}`).join('\n')
         || '*No boards connected.*'
+    const queueStatus = req.queue.map((d, i) => `${i + 1}. ${formatQueueShort(d)}`).join('\n')
+        || '*No connections queued.*'
 
     const statusEmbed = new EmbedBuilder()
         .setTitle('Board provision status')
-        .setDescription(boardStatus)
+        .addFields(
+            { name: 'Boards:', value: boardStatus },
+            { name: 'Queue:', value: queueStatus }
+        )
         .setColor('#27272a')
         .setTimestamp()
 
@@ -53,6 +58,16 @@ type BoardStatus = {
     type: 'DEV' | 'ATTACK'
 }
 
+type BoardQueue = {
+    name: string,
+    start: number, // epoch s
+}
+
+type BoardStatusUpdateBody = {
+    boards: BoardStatus[],
+    queue: BoardQueue[]
+}
+
 function formatBoardShort(c: BoardStatus) {
     const name = `\`${c.name}\` [\`${c.type}\`]`;
 
@@ -62,4 +77,9 @@ function formatBoardShort(c: BoardStatus) {
         return `\\🟡 ${name} in use by user \`${c.user}\``;
 
     return `\\🟢 ${name} available`;
+}
+
+function formatQueueShort(c: BoardQueue) {
+    const ts = Math.floor(c.start);
+    return `\`${c.name}\` queued <t:${ts}:R>`;
 }
