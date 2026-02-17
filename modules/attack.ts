@@ -2,7 +2,7 @@ import type { User } from 'discord.js';
 import { createConnection } from 'node:net';
 
 // Utils
-import { trySubmitFlag } from './challenges';
+// import { trySubmitFlag } from './challenges';
 import { truncate } from '../util/misc';
 import { readLines } from '../util/socket';
 
@@ -42,13 +42,13 @@ export async function runAttacksOnLocalTarget(team: string): Promise<[string, st
             }
 
             const flag = lineBuf.match(/ectf\{.+?}/)?.[0];
-            if (flag) {
-                flagSubmissions.push(
-                    trySubmitFlag(flag, team).then((message) => {
-                        alerts.push(message);
-                    })
-                );
-            }
+            // if (flag) {
+            //     flagSubmissions.push(
+            //         trySubmitFlag(flag, team).then((message) => {
+            //             alerts.push(message);
+            //         })
+            //     );
+            // }
 
             const vuln = lineBuf.match(/POTENTIAL VULNERABILITY: (.+)/)?.[1];
             if (vuln) {
@@ -76,13 +76,13 @@ export async function runCustomAttackOnTarget(team: string, scriptUrl: string): 
             }
 
             const flag = lineBuf.match(/ectf\{.+?}/)?.[0];
-            if (flag) {
-                flagSubmissions.push(
-                    trySubmitFlag(flag, team).then((message) => {
-                        alerts.push(message);
-                    })
-                );
-            }
+            // if (flag) {
+            //     flagSubmissions.push(
+            //         trySubmitFlag(flag, team).then((message) => {
+            //             alerts.push(message);
+            //         })
+            //     );
+            // }
 
             const vuln = lineBuf.match(/POTENTIAL VULNERABILITY: (.+)/)?.[1];
             if (vuln) {

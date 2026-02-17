@@ -4,8 +4,10 @@ services:
         build:
             dockerfile: ./Dockerfile
             context: .
-        # ports:
-        #     - "8081:8081"
+        expose:
+            - 8134
+            - 8133
+            - 8132
         volumes:
             - ./temp:/app/temp
         restart: always

@@ -20,3 +20,4 @@ void initZulipClient();
 
 void initBoardStatusSubscription();
 void initBuildStatusSubscription();
+void initFlagProxy();
