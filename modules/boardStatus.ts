@@ -1,10 +1,13 @@
 import { Subscriber } from 'zeromq';
 import { EmbedBuilder } from 'discord.js';
+import AsyncLock from 'async-lock';
 import { client } from '../bot';
 
-// Config
+// Utils
 import { PROV_STATUS_PORT, STATUS_CHANNEL_ID, STATUS_MESSAGE_ID } from '../config';
 
+
+export const statusLock = new AsyncLock();
 
 export async function initBoardStatusSubscription() {
     const sock = new Subscriber();
@@ -29,10 +32,6 @@ async function updateBoardStatus(req: BoardStatusUpdateBody) {
     if (!channel?.isSendable())
         return console.error('[BUILD] Could not find build status channel!');
 
-    const message = channel.messages.cache.get(STATUS_MESSAGE_ID)
-        ?? await channel.messages.fetch(STATUS_MESSAGE_ID)
-        ?? channel.lastMessage;
-
     const boardStatus = req.boards.map((d, i) => `${i + 1}. ${formatBoardShort(d)}`).join('\n')
         || '*No boards connected.*'
     const queueStatus = req.queue.map((d, i) => `${i + 1}. ${formatQueueShort(d)}`).join('\n')
@@ -47,8 +46,14 @@ async function updateBoardStatus(req: BoardStatusUpdateBody) {
         .setColor('#27272a')
         .setTimestamp()
 
-    if (!message?.editable) return channel.send({ embeds: [statusEmbed] }); // TODO
-    return message.edit({ embeds: [message.embeds[0], statusEmbed] });
+    await statusLock.acquire('status', async () => {
+        const message = channel.messages.cache.get(STATUS_MESSAGE_ID)
+            ?? await channel.messages.fetch(STATUS_MESSAGE_ID)
+            ?? channel.lastMessage;
+
+        if (!message?.editable) return channel.send({ embeds: [statusEmbed] }); // TODO
+        return message.edit({ embeds: [message.embeds[0], statusEmbed] });
+    });
 }
 
 type BoardStatus = {

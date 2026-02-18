@@ -2,7 +2,8 @@ import { Subscriber } from 'zeromq';
 import { EmbedBuilder } from 'discord.js';
 import { client } from '../bot';
 
-// Config
+// Utils
+import { statusLock } from './boardStatus';
 import {
     BUILD_STATUS_PORT,
     DESIGN_REPO_URL,
@@ -35,10 +36,6 @@ async function updateBuildStatus(req: BuildStatusUpdateBody) {
     const channel = client.channels.cache.get(STATUS_CHANNEL_ID);
     if (!channel?.isSendable())
         return console.error('[BUILD] Could not find build status channel!');
-
-    const message = channel.messages.cache.get(STATUS_MESSAGE_ID)
-        ?? await channel.messages.fetch(STATUS_MESSAGE_ID)
-        ?? channel.lastMessage;
 
     const queueStatus = req.queue.map((d, i) => `${i + 1}. ${formatActionShort(d)}`).join('\n')
         || '*No commits queued.*'
@@ -79,8 +76,14 @@ async function updateBuildStatus(req: BuildStatusUpdateBody) {
             failureChannel.send({ embeds: [failureEmbed] })
     }
 
-    if (!message?.editable) return channel.send({ embeds: [statusEmbed] });
-    return message.edit({ embeds: [statusEmbed, message.embeds[1]] });
+    await statusLock.acquire('status', async () => {
+        const message = channel.messages.cache.get(STATUS_MESSAGE_ID)
+            ?? await channel.messages.fetch(STATUS_MESSAGE_ID)
+            ?? channel.lastMessage;
+
+        if (!message?.editable) return channel.send({ embeds: [statusEmbed] });
+        return message.edit({ embeds: [statusEmbed, message.embeds[1]] });
+    });
 }
 
 type ActionStatus = 'SUCCESS' | 'TESTING' | 'BUILDING' | 'BUILD_PENDING' | 'TEST_PENDING' | 'BUILD_FAILED' | 'TEST_FAILED';
