@@ -29,6 +29,8 @@ export async function initZulipClient() {
         const name = e.message.display_recipient.toLowerCase().replaceAll(' ', '-');
         const topic = e.message.subject.replace(/^✔ /, '');
         const resolved = e.message.subject.startsWith('✔ ');
+        const content = e.message.content
+            .replace(/\[(.+?)]\((\/.+?)\)/g, `[$1](${process.env.ZULIP_REALM}$2)`) // Replace relative links with absolute
 
         const forum = category.children.cache.find((v) => v.name === name);
         if (forum?.type !== ChannelType.GuildForum) return;
@@ -51,7 +53,7 @@ export async function initZulipClient() {
             ?? await forum.createWebhook({ name: WEBHOOK_NAME });
 
         await hook.send({
-            content: truncate(e.message.content, 2000, '...\n\n-# Message truncated; view full message on Zulip'),
+            content: truncate(content, 2000, '...\n\n-# Message truncated; view full message on Zulip'),
             username: e.message.sender_full_name,
             avatarURL: e.message.avatar_url ?? gravatarUrl(e.message.sender_email),
             threadId: thread.id,
