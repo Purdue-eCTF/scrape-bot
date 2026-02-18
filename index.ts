@@ -4,6 +4,7 @@ import { fetchAndUpdateScoreboard } from './modules/scoreboard';
 import { fetchAndUpdateChallenges } from './modules/challenges';
 import { initBoardStatusSubscription } from './modules/boardStatus';
 import { initBuildStatusSubscription } from './modules/buildStatus';
+import { initFlagProxy } from './modules/flagProxy';
 
 
 void initTargetsRepo();
