@@ -1,6 +1,10 @@
 import { Publisher, Subscriber } from 'zeromq';
+import { EmbedBuilder } from 'discord.js';
+
+// Utils
 import { CHALLENGE_FORMATS, challenges, ctfd } from './challenges';
-import { FLAG_IN_PORT, FLAG_OUT_PORT } from '../config';
+import { ATTACK_NOTIFY_CHANNEL_ID, FLAG_IN_PORT, FLAG_OUT_PORT } from '../config';
+import { client } from '../bot';
 
 
 export async function initFlagProxy() {
@@ -21,33 +25,31 @@ export async function initFlagProxy() {
                 ? parsed.data
                 : parsed.data;
 
-            // TODO: replace with discord logging
             const prefix = flag.match(/ectf\{(\w+?_).+}/)?.[1];
             if (!prefix) {
-                console.error(`Flag ${flag} missing discernible prefix`);
+                void dispatchFlagError(flag, parsed.team, 'missing discernible prefix');
                 continue;
             }
 
             const scenario = CHALLENGE_FORMATS.find((c) => c.prefix === prefix)?.name;
             if (!scenario) {
-                console.error(`Flag ${flag} prefix ${prefix} not matched to any scenario`);
+                void dispatchFlagError(flag, parsed.team, `prefix \`${prefix}\` not matched to any scenario`);
                 continue;
             }
 
             const chall = challenges.find((c) => c.name.toLowerCase() === `${scenario} - ${parsed.team}`.toLowerCase());
             if (!chall) {
-                console.error(`Could not find challenge for flag ${flag} (${scenario} - ${parsed.team})`);
+                void dispatchFlagError(flag, parsed.team, `could not find challenge \`${scenario} - ${parsed.team}\``);
                 continue;
             }
 
             const res = await ctfd.challenges.submitFlag(chall.id, flag);
-            if (res.status !== 'correct') {
-                console.error('...');
-                continue;
-            }
+            void dispatchFlagSubmit(flag, parsed.team, res.status);
+
+            if (res.status !== 'correct') continue;
 
             // Only pass on successful submits to log server
-            void pub.send(JSON.stringify({
+            await pub.send(JSON.stringify({
                 team: parsed.team,
                 challengeId: chall.id,
                 method: parsed.method,
@@ -71,4 +73,30 @@ type FlagSubmissionOutput = {
     challengeId: number,
     method: 'TESTS' | 'SUS',
     flag: string
+}
+
+async function dispatchFlagError(flag: string, team: string, error: string) {
+    const channel = client.channels.cache.get(ATTACK_NOTIFY_CHANNEL_ID);
+    if (!channel?.isSendable()) return;
+
+    const flagEmbed = new EmbedBuilder()
+        .setTitle(`Flag submission error for team ${team}`)
+        .setDescription(`Found flag:\`\`\`${flag}\`\`\`\nwith error: ${error}`)
+        .setColor('#C61130')
+        .setTimestamp();
+
+    await channel.send({ embeds: [flagEmbed] });
+}
+
+async function dispatchFlagSubmit(flag: string, team: string, status: string) {
+    const channel = client.channels.cache.get(ATTACK_NOTIFY_CHANNEL_ID);
+    if (!channel?.isSendable()) return;
+
+    const flagEmbed = new EmbedBuilder()
+        .setTitle(`Flag submitted for team ${team}`)
+        .setDescription(`Found flag:\`\`\`${flag}\`\`\`\nwith status: \`${status}\``)
+        .setColor('#C61130')
+        .setTimestamp();
+
+    await channel.send({ embeds: [flagEmbed] });
 }
