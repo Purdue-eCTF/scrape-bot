@@ -1,15 +1,22 @@
-import { Readable } from 'node:stream';
+import { writeFile } from 'node:fs/promises';
 import AdmZip from 'adm-zip';
 import StreamZip from 'node-stream-zip';
+import { execAsync } from './exec';
 
 
-// export async function streamAndUnzip(res: Response, dest: string) {
-//     return new Promise<void>(async (resolve) => {
-//         Readable.fromWeb(res.body!)
-//             .pipe(unzip.Extract({ path: dest }))
-//             .on('close', () => resolve());
-//     })
-// }
+// TODO
+export async function writePortsFile(name: string, ip: string, portLow: number, portHigh: number) {
+    const ports = new Array(portHigh - portLow + 1).fill(0).map((_, i) => portLow + i);
+    await writeFile(`./temp/${name}/ports.txt`, `${ip} ${ports.join(' ')}`);
+}
+
+export async function initTargetsRepo() {
+    console.log('[GIT] Initializing targets repository');
+    await execAsync(
+        `git clone ${process.env.TARGETS_REPO_URL} temp || (cd temp && git fetch && git pull --ff-only)`
+    );
+    console.log(await execAsync('cd temp && git status'));
+}
 
 export async function bufferAndUnzipLocal(path: string, dest: string) {
     const zip = new AdmZip(path);

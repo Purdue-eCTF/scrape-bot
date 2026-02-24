@@ -5,6 +5,7 @@ import { fetchAndUpdateChallenges } from './modules/challenges';
 import { initBoardStatusSubscription } from './modules/boardStatus';
 import { initBuildStatusSubscription } from './modules/buildStatus';
 import { initFlagProxy } from './modules/flagProxy';
+import { initTargetsRepo } from './util/files';
 
 
 void initTargetsRepo();

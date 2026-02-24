@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm } from 'node:fs/promises';
 import { AttachmentBuilder } from 'discord.js';
 import { App } from '@slack/bolt';
 import AsyncLock from 'async-lock';
@@ -12,7 +12,7 @@ import {
     updateInfoForTeam,
 } from '../bot';
 import { formatAttackOutput, runAttacksOnLocalTarget } from './attack';
-import { trySubmitFlag } from './challenges';
+import { writePortsFile } from '../util/files';
 
 // Config
 import { SLACK_TARGET_CHANNEL_ID, SLACK_TEAM_CHANNEL_ID } from '../config';
@@ -99,8 +99,8 @@ slack.message(async ({ client, message }) => {
     if (!team) {
         // TODO: try everything
     } else {
-        const msg = await trySubmitFlag(flag, team);
-        await broadcastPeskySubmit(team, msg);
+        // const msg = await trySubmitFlag(flag, team);
+        // await broadcastPeskySubmit(team, msg);
     }
 });
 
@@ -238,17 +238,4 @@ function tryParseIpPort(raw: string) {
         portLow: portLow,
         portHigh: portLow + 4, // Don't bother parsing higher port for typos; assume its always lower + 4
     };
-}
-
-export async function writePortsFile(name: string, ip: string, portLow: number, portHigh: number) {
-    const ports = new Array(portHigh - portLow + 1).fill(0).map((_, i) => portLow + i);
-    await writeFile(`./temp/${name}/ports.txt`, `${ip} ${ports.join(' ')}`);
-}
-
-export async function initTargetsRepo() {
-    console.log('[GIT] Initializing targets repository');
-    await execAsync(
-        `git clone ${process.env.TARGETS_REPO_URL} temp || (cd temp && git fetch && git pull --ff-only)`
-    );
-    console.log(await execAsync('cd temp && git status'));
 }
