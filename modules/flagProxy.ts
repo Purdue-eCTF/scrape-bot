@@ -5,6 +5,7 @@ import { EmbedBuilder } from 'discord.js';
 import { CHALLENGE_FORMATS, challenges, ctfd } from './challenges';
 import { ATTACK_NOTIFY_CHANNEL_ID, FLAG_IN_PORT, FLAG_OUT_PORT } from '../config';
 import { client } from '../bot';
+import { stealDesign } from '../util/api';
 
 
 export async function initFlagProxy() {
@@ -20,10 +21,19 @@ export async function initFlagProxy() {
             const parsed = JSON.parse(msg.toString()) as FlagSubmissionInput;
             console.log(parsed);
 
-            // TODO: convert hash to flag
-            const flag = parsed.type === 'HASH'
-                ? parsed.data
-                : parsed.data;
+            // We are sent either a direct flag (type = 'FLAG') or a steal design hash (type = 'HASH')
+            // which we submit through the API.
+            let flag = parsed.data;
+            if (parsed.type === 'HASH') {
+                const res = await stealDesign(parsed.team, parsed.data);
+                if ('detail' in res) {
+                    const message = typeof res.detail === 'string' ? res.detail : res.detail[0].msg;
+                    void dispatchFlagError(parsed.data, parsed.team, `steal design hash submission failed w/ message \`${message}\``);
+                    continue;
+                }
+
+                flag = res.flag_hex;
+            }
 
             const prefix = flag.match(/ectf\{(\w+?_).+}/)?.[1];
             if (!prefix) {
