@@ -69,6 +69,8 @@ ZULIP_USERNAME="...-bot@ectf.zulipchat.com"
 ZULIP_API_KEY="..."
 ZULIP_REALM="https://ectf.zulipchat.com"
 
+ECTF_API_TOKEN="..."
+
 TARGETS_REPO_URL="https://username:token@github.com/Purdue-eCTF-2024/2024-Targets"
 
 CTFD_EMAIL="..."
