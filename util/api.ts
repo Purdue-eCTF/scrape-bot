@@ -1,3 +1,7 @@
+import { createWriteStream } from 'node:fs';
+import { Readable } from 'node:stream';
+import { finished } from 'node:stream/promises';
+
 const API_BASE = 'https://api.ectf.mitre.org/api';
 
 
@@ -32,12 +36,15 @@ export async function getPackages() {
 }
 
 // {@Link https://api.ectf.mitre.org/docs#/package/get_package_zip_api_package__package_name___get}
-export async function getPackageContents(team: string) {
+export async function downloadEncPackage(team: string) {
     const res = await fetch(`${API_BASE}/package/${team}/`, {
         headers: { Authorization: `Bearer ${process.env.ECTF_API_TOKEN}` }
     });
 
-    return res.text();
+    if (!res.body) return console.error(':(');
+
+    const s = createWriteStream(`./temp/${team}.enc`);
+    return finished(Readable.fromWeb(res.body).pipe(s));
 }
 
 // {@Link https://api.ectf.mitre.org/docs#/remote/queue_flow_remote_api_flow_remote__post}
