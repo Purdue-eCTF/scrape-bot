@@ -52,7 +52,7 @@ eCTF 2025, this included dispatching the pesky neighbor scenario automatically w
 
 ![image](https://github.com/user-attachments/assets/cc7c8a73-3332-44ca-b63b-4fb06e0f583b)
 
-See `/modules/slack.ts` for more details on the workflows triggered by a target push to the Slack targets channel.
+See `/modules/zulip.ts` for more details on the workflows triggered by a target push to the Slack targets channel.
 
 ### Convenience commands
 The bot also maintains some convenience commands via [`ctfd-api`](https://www.npmjs.com/package/@b01lers/ctfd-api) like
