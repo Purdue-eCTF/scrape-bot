@@ -1,14 +1,7 @@
-import { writeFile } from 'node:fs/promises';
 import AdmZip from 'adm-zip';
 import StreamZip from 'node-stream-zip';
 import { execAsync } from './exec';
 
-
-// TODO
-export async function writePortsFile(name: string, ip: string, portLow: number, portHigh: number) {
-    const ports = new Array(portHigh - portLow + 1).fill(0).map((_, i) => portLow + i);
-    await writeFile(`./temp/${name}/ports.txt`, `${ip} ${ports.join(' ')}`);
-}
 
 export async function initTargetsRepo() {
     console.log('[GIT] Initializing targets repository');
