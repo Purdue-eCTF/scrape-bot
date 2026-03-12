@@ -1,4 +1,4 @@
 import { commandGroupOf } from '../../util/commands';
-import url from './url';
+import team from './team';
 
-export default commandGroupOf('load', [url])
+export default commandGroupOf('load', [team])

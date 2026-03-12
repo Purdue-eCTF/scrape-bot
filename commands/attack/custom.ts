@@ -5,7 +5,7 @@ import { ATTACK_FORUM_CHANNEL_ID } from '../../config';
 // Utils
 import { formatCustomAttackOutput, runCustomAttackOnTarget } from '../../modules/attack';
 import { textEmbed } from '../../util/embeds';
-import { autocompleteTargets } from '../../util/autocomplete';
+import { autocompleteLocalTargets } from '../../util/autocomplete';
 
 
 export default {
@@ -47,5 +47,5 @@ export default {
             files: [new AttachmentBuilder(Buffer.from(logs)).setName('logs.txt')]
         });
     },
-    autocomplete: autocompleteTargets
+    autocomplete: autocompleteLocalTargets
 } satisfies Subcommand;

@@ -105,7 +105,10 @@ async function handleKeyMessage(c: string) {
     if (!match) return console.error(':(');
 
     const [, team, key] = match;
+    await loadAndDecryptTeam(team, key);
+}
 
+export async function loadAndDecryptTeam(team: string, key: string) {
     // Ensure we have the `.enc` file in `./temp` already; if not, download it again
     const files = await readdir('./temp');
     if (!files.includes(`${team}.enc`))
