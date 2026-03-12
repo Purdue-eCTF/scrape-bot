@@ -1,4 +1,3 @@
-// @ts-ignore
 import zulipInit from '@ky28059/zulip-js';
 import { ChannelType, GuildForumTag } from 'discord.js';
 
@@ -12,12 +11,12 @@ const WEBHOOK_NAME = 'zulip-mirror'
 
 export async function initZulipClient() {
     const zulip = await zulipInit({
-        username: process.env.ZULIP_USERNAME,
-        apiKey: process.env.ZULIP_API_KEY,
-        realm: process.env.ZULIP_REALM,
+        username: process.env.ZULIP_USERNAME!,
+        apiKey: process.env.ZULIP_API_KEY!,
+        realm: process.env.ZULIP_REALM!,
     });
 
-    await zulip.callOnEachEvent(async (e: any) => {
+    await zulip.callOnEachEvent(async (e) => {
         if (e.type !== 'message') return; // TODO?
 
         console.log(e.message);
@@ -25,6 +24,9 @@ export async function initZulipClient() {
         // Mirror selected zulip channels to discord
         const category = client.channels.cache.get('1470601140113506407');
         if (category?.type !== ChannelType.GuildCategory) return;
+
+        // Ignore Zulip DMs
+        if (typeof e.message.display_recipient !== 'string') return;
 
         const name = e.message.display_recipient.toLowerCase().replaceAll(' ', '-');
         const topic = e.message.subject.replace(/^✔ /, '');

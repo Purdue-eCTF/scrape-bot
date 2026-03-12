@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@b01lers/ctfd-api": "^2.0.1",
-    "@ky28059/zulip-js": "^2.1.0",
+    "@ky28059/zulip-js": "^2.2.0",
     "@slack/bolt": "^4.2.1",
     "adm-zip": "^0.5.12",
     "async-lock": "^1.4.1",
