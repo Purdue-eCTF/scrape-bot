@@ -6,6 +6,7 @@ import { initBoardStatusSubscription } from './modules/boardStatus';
 import { initBuildStatusSubscription } from './modules/buildStatus';
 import { initFlagProxy } from './modules/flagProxy';
 import { initTargetsRepo } from './util/files';
+import { initAttackPub } from './modules/attackPub';
 
 
 void initTargetsRepo();
@@ -23,3 +24,4 @@ void initZulipClient();
 void initBoardStatusSubscription();
 void initBuildStatusSubscription();
 void initFlagProxy();
+void initAttackPub();

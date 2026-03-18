@@ -10,6 +10,7 @@ import { truncate } from '../util/misc';
 import { execAsync } from '../util/exec';
 import { streamAndUnzipLocal } from '../util/files';
 import { downloadEncPackage } from '../util/api';
+import { publishAttackRequest } from './attackPub';
 
 // Config
 import { ATTACK_FORUM_CHANNEL_ID, ATTACK_NOTIFY_CHANNEL_ID } from '../config';
@@ -118,16 +119,20 @@ export async function loadAndDecryptTeam(team: string, key: string) {
     await execAsync(`openssl enc -d -aes-256-cbc -pbkdf2 -salt -k ${key} -in ./temp/${team}.enc -out ./temp/${team}.zip`);
     await streamAndUnzipLocal(`./temp/${team}.zip`, `./temp/${team}`);
 
-    lock.acquire('git', async () => {
-        await execAsync(
-            `cd temp && git pull --ff-only && git add -f "${team}/" && (git diff-index --quiet HEAD || git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${team}" && git push)`
-        );
-    })
+    // In parallel: send off attack request, push unzipped files to targets repo, notify discord
+    await Promise.all([
+        // TODO: attack logs
+        publishAttackRequest(team, 'new'),
 
-    // TODO: attacks
-
-    // Report download to Discord
-    await notifyTargetPush(team);
+        async () => {
+            await lock.acquire('git', async () => {
+                await execAsync(
+                    `cd temp && git pull --ff-only && git add -f "${team}/" && (git diff-index --quiet HEAD || git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${team}" && git push)`
+                );
+            })
+            await notifyTargetPush(team); // TODO?
+        }
+    ]);
 }
 
 async function notifyTargetPush(team: string) {
@@ -158,7 +163,7 @@ async function notifyTargetPush(team: string) {
 
     const packageEmbed = new EmbedBuilder()
         .setTitle('New target pushed to targets repository')
-        .setDescription(`**${team}**: (\`${team}.zip\`)\n↳ Discussion: ${attackThread}`)
+        .setDescription(`**${team}** (\`${team}.zip\`):\n↳ Discussion: ${attackThread}`)
         .setColor('#C61130')
         .setTimestamp();
 

@@ -3,7 +3,7 @@ import { AttachmentBuilder, ChannelType, SlashCommandSubcommandBuilder } from 'd
 import { ATTACK_FORUM_CHANNEL_ID } from '../../config';
 
 // Utils
-import { formatAttackOutput, runAttacksOnLocalTarget } from '../../modules/attack';
+import { publishAttackRequest } from '../../modules/attackPub';
 import { textEmbed } from '../../util/embeds';
 import { autocompleteLocalTargets } from '../../util/autocomplete';
 
@@ -30,14 +30,16 @@ export default {
             return interaction.reply({ embeds: [textEmbed(`Could not find thread for team \`${target}\`.`)] });
 
         // Reply with ack embed
+        await publishAttackRequest(target, 'manual');
         await interaction.reply({ embeds: [textEmbed(`Queued automated attacks for team \`${target}\`.`)] });
 
         // When attacks resolve, send it in the appropriate attack thread.
-        const [logs, alerts] = await runAttacksOnLocalTarget(target);
-        await attackThread.send({
-            content: formatAttackOutput(target, alerts),
-            files: [new AttachmentBuilder(Buffer.from(logs)).setName('logs.txt')]
-        });
+        // TODO
+        // const [logs, alerts] = await runAttacksOnLocalTarget(target);
+        // await attackThread.send({
+        //     content: formatAttackOutput(target, alerts),
+        //     files: [new AttachmentBuilder(Buffer.from(logs)).setName('logs.txt')]
+        // });
     },
     autocomplete: autocompleteLocalTargets
 } satisfies Subcommand;
