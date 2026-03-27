@@ -1,4 +1,4 @@
-import { Publisher, Subscriber } from 'zeromq';
+import { Publisher, Reply } from 'zeromq';
 import { EmbedBuilder } from 'discord.js';
 
 // Utils
@@ -9,16 +9,23 @@ import { stealDesign } from '../util/api';
 
 
 export async function initFlagProxy() {
-    const sub = new Subscriber();
-    await sub.bind(`tcp://0.0.0.0:${FLAG_IN_PORT}`);
-    sub.subscribe();
+    const rep = new Reply();
+    await rep.bind(`tcp://0.0.0.0:${FLAG_IN_PORT}`);
 
     const pub = new Publisher();
     await pub.bind(`tcp://0.0.0.0:${FLAG_OUT_PORT}`);
 
-    for await (const [msg] of sub) {
+    async function handleFlagError(flag: string, team: string, error: string) {
+        await rep.send(JSON.stringify({
+            ok: false,
+            msg: error,
+        } satisfies FlagSubmissionReply));
+        void dispatchFlagError(flag, team, error);
+    }
+
+    for await (const [msg] of rep) {
         try {
-            const parsed = JSON.parse(msg.toString()) as FlagSubmissionInput;
+            const parsed = JSON.parse(msg.toString()) as FlagSubmissionRequest;
             console.log(parsed);
 
             // We are sent either a direct flag (type = 'FLAG') or a steal design hash (type = 'HASH')
@@ -28,7 +35,7 @@ export async function initFlagProxy() {
                 const res = await stealDesign(parsed.team, parsed.data);
                 if ('detail' in res) {
                     const message = typeof res.detail === 'string' ? res.detail : res.detail[0].msg;
-                    void dispatchFlagError(parsed.data, parsed.team, `steal design hash submission failed w/ message \`${message}\``);
+                    await handleFlagError(parsed.data, parsed.team, `steal design hash submission failed w/ message \`${message}\``);
                     continue;
                 }
 
@@ -37,26 +44,31 @@ export async function initFlagProxy() {
 
             const prefix = flag.match(/ectf\{(\w+?_).+}/)?.[1];
             if (!prefix) {
-                void dispatchFlagError(flag, parsed.team, 'missing discernible prefix');
+                await handleFlagError(flag, parsed.team, 'missing discernible prefix');
                 continue;
             }
 
             const scenario = CHALLENGE_FORMATS.find((c) => c.prefix === prefix)?.name;
             if (!scenario) {
-                void dispatchFlagError(flag, parsed.team, `prefix \`${prefix}\` not matched to any scenario`);
+                await handleFlagError(flag, parsed.team, `prefix \`${prefix}\` not matched to any scenario`);
                 continue;
             }
 
             const chall = challenges.find((c) => c.name.toLowerCase() === `${scenario} - ${parsed.team}`.toLowerCase());
             if (!chall) {
-                void dispatchFlagError(flag, parsed.team, `could not find challenge \`${scenario} - ${parsed.team}\``);
+                await handleFlagError(flag, parsed.team, `could not find challenge \`${scenario} - ${parsed.team}\``);
                 continue;
             }
 
             const res = await ctfd.challenges.submitFlag(chall.id, flag);
             void dispatchFlagSubmit(flag, parsed.team, res.status);
 
-            if (res.status !== 'correct') continue;
+            if (res.status !== 'correct') {
+                await rep.send(JSON.stringify({ ok: false, msg: 'incorrect flag' } satisfies FlagSubmissionReply));
+                continue;
+            }
+
+            await rep.send(JSON.stringify({ ok: true } satisfies FlagSubmissionReply));
 
             // Only pass on successful submits to log server
             await pub.send(JSON.stringify({
@@ -71,11 +83,16 @@ export async function initFlagProxy() {
     }
 }
 
-type FlagSubmissionInput = {
+type FlagSubmissionRequest = {
     team: string,
     method: 'TESTS' | 'SUS',
     type: 'FLAG' | 'HASH',
     data: string
+}
+
+type FlagSubmissionReply = {
+    ok: boolean,
+    msg?: string
 }
 
 type FlagSubmissionOutput = {
