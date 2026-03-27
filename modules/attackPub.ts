@@ -11,7 +11,7 @@ export async function initAttackPub() {
     // TODO: attack server log subscriber ...
 }
 
-export async function publishAttackRequest(team: string, type: 'new' | 'manual') {
+export async function publishAttackRequest(team: string, type: 'new' | 'manual' | 'sus') {
     // const path = `/home/ubuntu/scrape-bot/temp/${team}`;
     await attackPub.send([type, team]);
 }
