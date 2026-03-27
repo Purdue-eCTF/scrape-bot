@@ -5,6 +5,7 @@ export const PROV_STATUS_PORT = 8130;
 export const FLAG_IN_PORT = 8134;
 export const FLAG_OUT_PORT = 8133;
 export const ATTACK_PUSH_PORT = 8132;
+export const BUILD_ELF_PUSH_PORT = 9999;
 // export const BOLT_PORT = 8081;
 
 export const SCOREBOARD_NOTIFY_CHANNEL_ID = '1439055452867661855';

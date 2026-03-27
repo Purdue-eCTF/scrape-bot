@@ -135,7 +135,7 @@ export async function loadAndDecryptTeam(team: string, key: string) {
     ]);
 }
 
-async function notifyTargetPush(team: string) {
+export async function getAttackThread(team: string) {
     const attackThreadsChannel = client.channels.cache.get(ATTACK_FORUM_CHANNEL_ID);
     if (attackThreadsChannel?.type !== ChannelType.GuildForum) return;
 
@@ -158,6 +158,12 @@ async function notifyTargetPush(team: string) {
         await message?.pin();
     }
 
+    return attackThread;
+}
+
+async function notifyTargetPush(team: string) {
+    const attackThread = await getAttackThread(team);
+
     const channel = client.channels.cache.get(ATTACK_NOTIFY_CHANNEL_ID);
     if (!channel?.isSendable()) return;
 
@@ -168,6 +174,4 @@ async function notifyTargetPush(team: string) {
         .setTimestamp();
 
     await channel.send({ embeds: [packageEmbed] });
-
-    return attackThread;
 }
