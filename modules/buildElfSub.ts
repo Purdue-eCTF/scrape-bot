@@ -43,7 +43,7 @@ async function handleElfSuccess(team: string) {
     if (!attackThread) return;
 
     const files = await readdir(`./temp/${team}/dev`);
-    const desc = files.map((f) => `|_ ${f}`)
+    const desc = files.map((f) => `|_ ${f}`).join('\n');
 
     const elfEmbed = new EmbedBuilder()
         .setTitle('Built ELFs pushed to targets repository')
