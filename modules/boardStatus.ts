@@ -32,16 +32,20 @@ async function updateBoardStatus(req: BoardStatusUpdateBody) {
     if (!channel?.isSendable())
         return console.error('[BUILD] Could not find build status channel!');
 
-    const boardStatus = req.boards.map((d, i) => `${i + 1}. ${formatBoardShort(d)}`).join('\n')
-        || '*No boards connected.*'
-    const queueStatus = req.queue.map((d, i) => `${i + 1}. ${formatQueueShort(d)}`).join('\n')
-        || '*No connections queued.*'
+    const boardStatus = req.boards
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((d, i) => `${i + 1}. ${formatBoardShort(d)}`)
+        .join('\n');
+    const queueStatus = req.queue
+        .sort((a, b) => a.start - b.start)
+        .map((d, i) => `${i + 1}. ${formatQueueShort(d)}`)
+        .join('\n')
 
     const statusEmbed = new EmbedBuilder()
         .setTitle('Board provision status')
         .addFields(
-            { name: 'Boards:', value: boardStatus },
-            { name: 'Queue:', value: queueStatus }
+            { name: 'Boards:', value: boardStatus || '*No boards connected.*' },
+            { name: 'Queue:', value: queueStatus || '*No connections queued.*' }
         )
         .setColor('#27272a')
         .setTimestamp()
