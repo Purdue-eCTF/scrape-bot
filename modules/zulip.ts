@@ -124,14 +124,14 @@ export async function loadAndDecryptTeam(team: string, key: string) {
         // TODO: attack logs
         publishAttackRequest(team, 'new'),
 
-        async () => {
+        (async () => {
             await lock.acquire('git', async () => {
                 await execAsync(
                     `cd temp && git pull --ff-only && git add -f "${team}/" && (git diff-index --quiet HEAD || git -c user.name="eCTF scrape bot" -c user.email="purdue@ectf.fake" commit -m "Add ${team}" && git push)`
                 );
             })
             await notifyTargetPush(team); // TODO?
-        }
+        })()
     ]);
 }
 
