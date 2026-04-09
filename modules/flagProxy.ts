@@ -64,7 +64,10 @@ export async function initFlagProxy() {
             void dispatchFlagSubmit(flag, parsed.team, res.status);
 
             if (res.status !== 'correct') {
-                await rep.send(JSON.stringify({ ok: false, msg: 'incorrect flag' } satisfies FlagSubmissionReply));
+                const msg = res.status === 'incorrect' ? 'incorrect flag'
+                    : res.status === 'already_solved' ? 'already solved'
+                    : res.status;
+                await rep.send(JSON.stringify({ ok: false, msg } satisfies FlagSubmissionReply));
                 continue;
             }
 
