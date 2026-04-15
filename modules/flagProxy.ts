@@ -20,13 +20,14 @@ export async function initFlagProxy() {
             ok: false,
             msg: error,
         } satisfies FlagSubmissionReply));
+        console.log('[FLAG] sent error response:', error);
         void dispatchFlagError(flag, team, error);
     }
 
     for await (const [msg] of rep) {
         try {
             const parsed = JSON.parse(msg.toString()) as FlagSubmissionRequest;
-            console.log(parsed);
+            console.log('[FLAG]', parsed);
 
             // We are sent either a direct flag (type = 'FLAG') or a steal design hash (type = 'HASH')
             // which we submit through the API.
@@ -68,10 +69,12 @@ export async function initFlagProxy() {
                     : res.status === 'already_solved' ? 'already solved'
                     : res.status;
                 await rep.send(JSON.stringify({ ok: false, msg } satisfies FlagSubmissionReply));
+                console.log('[FLAG] sent error response:', msg)
                 continue;
             }
 
             await rep.send(JSON.stringify({ ok: true } satisfies FlagSubmissionReply));
+            console.log('[FLAG] sent success');
 
             // Only pass on successful submits to log server
             await pub.send(JSON.stringify({
@@ -82,6 +85,7 @@ export async function initFlagProxy() {
             } satisfies FlagSubmissionOutput));
         } catch (e) {
             console.error('Malformed flag submission message', e);
+            await rep.send(JSON.stringify({ ok: false, msg: 'internal server error' } satisfies FlagSubmissionReply))
         }
     }
 }

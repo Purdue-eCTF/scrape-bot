@@ -30,7 +30,7 @@ export async function initZulipClient() {
     await zulip.callOnEachEvent(async (e) => {
         if (e.type !== 'message') return; // TODO?
 
-        console.log(e.message);
+        console.log('[ZULIP]', e.message);
 
         // Attack phase
         if (e.message.display_recipient === '2026-attack-packages' && e.message.subject === 'upcoming attack packages')
