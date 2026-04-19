@@ -3,34 +3,7 @@ Scoreboard scraper and automated attack / CI / testing pipeline for eCTF.
 
 [[invite link](https://discord.com/oauth2/authorize?client_id=1199441161077674105&scope=bot+applications.commands&permissions=8)]
 
-```mermaid
-graph TD;
-    R(Design repo)-->|Push|CI(GitHub CI);
-    CI-->|Commit hash|BS(Build dev image);
-
-    subgraph bs [Build server];
-    BS-->|Dev image|D(Queue / distribute image)
-    end
-    
-    S(Slack targets channel)-->|Zipped design|SD(Slack autodownload);
-    ES(eCTF scoreboard)-->SR(Scoreboard alerts);
-
-    subgraph sb [Scrape bot];
-    DBS(Build / attack status);
-    SD;
-    SR;
-    end
-
-    SD-->TR(Targets repo);
-    SD-->|Target image|D;
-    SD-->DS(Discord alerting);
-    DBS-->DS;
-    SR-->DS;
-
-    D-->S1(Attack server 1);
-    D-->S2(Attack server 2);
-    D-->S3(Attack server ...);
-```
+![image](https://github.com/user-attachments/assets/eacbbf89-a373-4d48-b739-a21bb3bcca8c)
 
 The main functionality of this Discord bot is split into a few subdomains:
 
@@ -54,11 +27,18 @@ eCTF 2025, this included dispatching the pesky neighbor scenario automatically w
 
 See `/modules/zulip.ts` for more details on the workflows triggered by a target push to the Slack targets channel.
 
+
+For eCTF 2026, the bot also maintained a read-only Zulip workspace mirror in Discord for quick access to organizer messages:
+
+![mirror1](https://github.com/user-attachments/assets/dd059cf1-02d9-4803-9e17-aae980672ebb)
+![mirror2](https://github.com/user-attachments/assets/e147c9de-a41d-437a-8661-5d716e07ae43)
+
 ### Convenience commands
 The bot also maintains some convenience commands via [`ctfd-api`](https://www.npmjs.com/package/@b01lers/ctfd-api) like
-displaying scoreboard reports, challenge listings, and a command for quick flag submission.
+displaying scoreboard reports, challenge listings, and quick flag submissions.
 
 ![misc](https://github.com/user-attachments/assets/61447a80-10d9-4673-bcff-f4b11caee11e)
+![misc2](https://github.com/user-attachments/assets/9d28d7bc-e3b6-48ff-acde-0a7b7c819aa2)
 
 ### Running locally
 First, create a `.env` that exports your Discord token and other required credentials:
@@ -84,6 +64,8 @@ AUTH_SECRET="..."
 - `ZULIP_API_KEY` — your Zulip bot API key.
 - `ZULIP_REALM` — the Zulip workspace URL.
 
+- `ECTF_API_TOKEN` — the token required to access the new eCTF API.
+
 - `TARGETS_REPO_URL` — the GitHub URL to the targets repository to push new targets to. **If this is a private repository, make sure to include credentials with push access.**
 
 - `CTFD_EMAIL` — the email of your team on CTFd.
@@ -104,8 +86,6 @@ Other configuration options are found in `config.ts` (you likely won't need to c
 
 - `BUILD_STATUS_PORT` — the port to subscribe to build status messages on (see above diagram).
 - `PROV_STATUS_PORT` — the port to subscribe to board status messages on (see above diagram).
-
-<!-- - `BOLT_PORT` — the port to run the Slack bot on. -->
 
 Then, install dependencies with `npm install` and run `npm start` to start the bot.
 
